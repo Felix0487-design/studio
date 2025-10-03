@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { USERS, SUPER_SECRET_PASSWORD } from '@/lib/auth';
@@ -19,6 +19,11 @@ export default function LoginPage() {
   const { login } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,6 +44,10 @@ export default function LoginPage() {
       });
     }
   };
+
+  if (!isClient) {
+    return null; // Or a loading skeleton
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
