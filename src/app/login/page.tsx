@@ -31,7 +31,7 @@ export default function LoginPage() {
       login(selectedUser);
       router.push('/vote');
     } else {
-      setError('Contraseña incorrecta. Pista: es el vínculo que nos une.');
+      setError('Contraseña incorrecta. Pista: la fecha de nuestra próxima celebración.');
       toast({
         title: 'Error de acceso',
         description: 'Contraseña incorrecta. Vuelve a intentarlo.',
@@ -71,7 +71,7 @@ export default function LoginPage() {
                 id="password"
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => setPassword(e.targe.value)}
                 placeholder="********"
               />
             </div>
