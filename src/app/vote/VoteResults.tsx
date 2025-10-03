@@ -1,9 +1,9 @@
 import { Progress } from '@/components/ui/progress';
-import type { VotingOption, VoteCounts } from '@/lib/voting';
+import type { VotingOption } from '@/lib/voting';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface VoteResultsProps {
-  votes: VoteCounts;
+  votes: { [key: string]: number };
   totalVotes: number;
   options: VotingOption[];
 }

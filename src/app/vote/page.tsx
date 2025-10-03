@@ -1,35 +1,30 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
-import { votingOptions, type VoteCounts } from '@/lib/voting';
+import { useUser, useAuth } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { LogOut, Snowflake, ExternalLink, ThumbsUp } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { signOut } from 'firebase/auth';
 
 export default function VotePage() {
-  const { user, isLoading, logout } = useAuth();
+  const { user, isUserLoading } = useUser();
+  const auth = useAuth();
   const router = useRouter();
 
-  const [isClient, setIsClient] = useState(false);
-
   useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  useEffect(() => {
-    if (isClient && !isLoading && !user) {
+    if (!isUserLoading && !user) {
       router.replace('/login');
     }
-  }, [user, isLoading, router, isClient]);
+  }, [user, isUserLoading, router]);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await signOut(auth);
     router.push('/login');
   };
 
-  if (isLoading || !user || !isClient) {
+  if (isUserLoading || !user) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Snowflake className="h-16 w-16 animate-spin text-primary" />
@@ -50,7 +45,7 @@ export default function VotePage() {
             <h1 className="text-2xl text-primary">Navidad Votes</h1>
           </div>
           <div className="flex items-center gap-4">
-            <span className="hidden sm:inline text-foreground/80">¡Hola, {user.name}!</span>
+            <span className="hidden sm:inline text-foreground/80">¡Hola, {user.displayName || user.email}!</span>
             <Button variant="ghost" size="icon" onClick={handleLogout} aria-label="Cerrar sesión">
               <LogOut className="h-5 w-5 text-primary" />
             </Button>

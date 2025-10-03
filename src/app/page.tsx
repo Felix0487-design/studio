@@ -2,25 +2,21 @@
 
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { ArrowRight, Users, UserCheck } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { USERS } from '@/lib/auth';
+import { useCollection } from '@/firebase';
+import { collection } from 'firebase/firestore';
+import { useFirestore, useMemoFirebase } from '@/firebase';
 
 export default function LandingPage() {
   const router = useRouter();
-  const [votesCasted, setVotesCasted] = useState(0);
+  const firestore = useFirestore();
+  const votesQuery = useMemoFirebase(() => collection(firestore, 'votes'), [firestore]);
+  const { data: votes, isLoading } = useCollection(votesQuery);
 
-  useEffect(() => {
-    const storedVotes = localStorage.getItem('navidad-votes');
-    if (storedVotes) {
-      const voteCounts = JSON.parse(storedVotes);
-      const totalVotes = Object.values(voteCounts).reduce((sum: any, count: any) => sum + count, 0);
-      setVotesCasted(totalVotes);
-    }
-  }, []);
-
+  const votesCasted = votes?.length ?? 0;
   const totalUsers = USERS.length;
   const remainingVotes = totalUsers - votesCasted;
 
@@ -62,11 +58,11 @@ export default function LandingPage() {
               <CardFooter className="flex flex-col sm:flex-row justify-center gap-4 pt-6">
                 <div className="flex items-center gap-2 text-sm font-medium p-2 rounded-md bg-secondary text-secondary-foreground">
                   <UserCheck className="h-5 w-5 text-primary" />
-                  Votos emitidos: <span className="font-bold text-primary">{votesCasted}</span>
+                  Votos emitidos: <span className="font-bold text-primary">{isLoading ? '...' : votesCasted}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm font-medium p-2 rounded-md bg-secondary text-secondary-foreground">
                   <Users className="h-5 w-5 text-primary" />
-                  Faltan por votar: <span className="font-bold text-primary">{remainingVotes}</span>
+                  Faltan por votar: <span className="font-bold text-primary">{isLoading ? '...' : remainingVotes}</span>
                 </div>
               </CardFooter>
             </Card>

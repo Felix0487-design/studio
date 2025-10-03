@@ -1,142 +1,64 @@
+
 {
   "entities": {
-    "Vote": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Vote",
-      "type": "object",
-      "description": "Represents a single vote cast by a user.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the vote."
-        },
-        "userId": {
-          "type": "string",
-          "description": "Reference to the User who cast the vote. (Relationship: User 1:N Vote)"
-        },
-        "candidateId": {
-          "type": "string",
-          "description": "Reference to the Candidate who received the vote. (Relationship: Candidate 1:N Vote)"
-        },
-        "timestamp": {
-          "type": "string",
-          "description": "The date and time when the vote was cast.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "userId",
-        "candidateId",
-        "timestamp"
-      ]
-    },
     "User": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
       "description": "Represents a user of the application.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the user."
+          "description": "Unique identifier for the user (Firebase Auth UID)."
         },
-        "username": {
+        "email": {
           "type": "string",
-          "description": "Username of the user."
+          "description": "Email of the user.",
+          "format": "email"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Display name of the user."
         }
       },
-      "required": [
-        "id",
-        "username"
-      ]
+      "required": ["id", "email"]
     },
-    "Candidate": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Candidate",
+    "Vote": {
+      "title": "Vote",
       "type": "object",
-      "description": "Represents a candidate in the election.",
+      "description": "Represents a single vote cast by a user for a specific option.",
       "properties": {
-        "id": {
+        "userId": {
           "type": "string",
-          "description": "Unique identifier for the candidate."
+          "description": "The UID of the user who cast the vote."
         },
-        "name": {
+        "optionId": {
           "type": "string",
-          "description": "Name of the candidate."
+          "description": "The ID of the voting option selected."
         },
-        "description": {
+        "timestamp": {
           "type": "string",
-          "description": "A brief description of the candidate."
+          "format": "date-time",
+          "description": "The server timestamp when the vote was cast."
+        },
+        "userEmail": {
+          "type": "string",
+          "description": "Denormalized user email for easier display."
         }
       },
-      "required": [
-        "id",
-        "name"
-      ]
+      "required": ["userId", "optionId", "timestamp"]
     }
   },
   "auth": {
     "providers": [
-      "password",
-      "anonymous"
+      "password"
     ]
   },
   "firestore": {
-    "structure": [
-      {
-        "path": "/users/{userId}",
-        "definition": {
-          "entityName": "User",
-          "schema": {
-            "$ref": "#/backend/entities/User"
-          },
-          "description": "Stores user profiles. The userId is the Firebase Auth UID. Includes standard user profile information.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The Firebase Auth UID of the user."
-            }
-          ]
-        }
+    "/votes/{voteId}": {
+      "schema": {
+        "$ref": "#/entities/Vote"
       },
-      {
-        "path": "/candidates/{candidateId}",
-        "definition": {
-          "entityName": "Candidate",
-          "schema": {
-            "$ref": "#/backend/entities/Candidate"
-          },
-          "description": "Stores candidate information.",
-          "params": [
-            {
-              "name": "candidateId",
-              "description": "The unique identifier of the candidate."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{userId}/votes/{voteId}",
-        "definition": {
-          "entityName": "Vote",
-          "schema": {
-            "$ref": "#/backend/entities/Vote"
-          },
-          "description": "Stores votes cast by users. Each user document has a subcollection of votes. Only one vote is allowed per user.  Includes denormalized 'userId' for authorization independence.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The Firebase Auth UID of the user casting the vote."
-            },
-            {
-              "name": "voteId",
-              "description": "The unique identifier for the vote."
-            }
-          ]
-        }
-      }
-    ],
-    "reasoning": "The Firestore structure is designed to ensure authorization independence, clarity, and scalability for the Navidad Votes application. It leverages path-based ownership for user-specific data and segregates data based on access requirements. Votes are stored as subcollections under each user's document to ensure that each user can only vote once, and to make it easy to query for a user's vote. This ensures Authorization Independence since no `get()` calls are required in security rules.\n\nQAPs:\n*   Secure List Operations: Path-based ownership ensures that listing votes is secure, as users can only access votes under their own user document.\n*   One Vote per User: The structure inherently supports the constraint that a user can only vote once, as the existence of a vote subcollection under the user's document indicates that the user has already voted."
+      "description": "Stores all votes. The document ID is the user's UID to enforce one vote per user."
+    }
   }
 }

@@ -1,75 +1,77 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
-import { votingOptions, type VoteCounts } from '@/lib/voting';
+import { useUser, useAuth, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
+import { votingOptions } from '@/lib/voting';
 import VoteCard from '../vote/VoteCard';
 import VoteResults from '../vote/VoteResults';
 import { Button } from '@/components/ui/button';
 import { LogOut, Snowflake, ArrowLeft } from 'lucide-react';
+import { signOut } from 'firebase/auth';
+import { collection, doc, setDoc, getDocs, writeBatch, serverTimestamp } from 'firebase/firestore';
 
 export default function VotingBoothPage() {
-  const { user, isLoading, logout } = useAuth();
+  const { user, isUserLoading } = useUser();
+  const auth = useAuth();
+  const firestore = useFirestore();
   const router = useRouter();
 
-  const [hasVoted, setHasVoted] = useState<string | null>(null);
-  const [votes, setVotes] = useState<VoteCounts>({});
-  const [isClient, setIsClient] = useState(false);
+  const userVoteRef = useMemoFirebase(() => user ? doc(firestore, 'votes', user.uid) : null, [firestore, user]);
+  const { data: userVote, isLoading: isVoteLoading } = useDoc(userVoteRef);
+
+  const votesColRef = useMemoFirebase(() => collection(firestore, 'votes'), [firestore]);
+  const { data: allVotes, isLoading: areVotesLoading } = useCollection(votesColRef);
 
   useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  useEffect(() => {
-    if (isClient && !isLoading && !user) {
+    if (!isUserLoading && !user) {
       router.replace('/login');
     }
-  }, [user, isLoading, router, isClient]);
+  }, [user, isUserLoading, router]);
 
-  useEffect(() => {
-    if (isClient && user) {
-      const storedHasVoted = localStorage.getItem(`navidad-voted_${user.name}`);
-      setHasVoted(storedHasVoted);
+  const handleVote = async (optionId: string) => {
+    if (userVote || !user) return;
 
-      const storedVotes = localStorage.getItem('navidad-votes');
-      if (storedVotes) {
-        setVotes(JSON.parse(storedVotes));
-      } else {
-        const initialVotes = votingOptions.reduce((acc, option) => {
-          acc[option.id] = 0;
-          return acc;
-        }, {} as VoteCounts);
-        setVotes(initialVotes);
-      }
+    const voteData = {
+      userId: user.uid,
+      optionId: optionId,
+      timestamp: serverTimestamp(),
+      userEmail: user.email,
+    };
+    
+    if (userVoteRef) {
+      await setDoc(userVoteRef, voteData);
     }
-  }, [isClient, user]);
-
-  const handleVote = (optionId: string) => {
-    if (hasVoted || !user) return;
-
-    const newVotes = { ...votes, [optionId]: (votes[optionId] || 0) + 1 };
-    setVotes(newVotes);
-    localStorage.setItem('navidad-votes', JSON.stringify(newVotes));
-
-    localStorage.setItem(`navidad-voted_${user.name}`, optionId);
-    setHasVoted(optionId);
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await signOut(auth);
     router.push('/login');
   };
 
-  if (isLoading || !user || !isClient) {
+  const voteCounts = useMemo(() => {
+    const counts: { [key: string]: number } = {};
+    votingOptions.forEach(opt => counts[opt.id] = 0);
+    if (allVotes) {
+      for (const vote of allVotes) {
+        if (vote.optionId in counts) {
+          counts[vote.optionId]++;
+        }
+      }
+    }
+    return counts;
+  }, [allVotes]);
+  
+  const totalVotes = allVotes?.length ?? 0;
+  const hasVoted = userVote?.optionId;
+
+  if (isUserLoading || !user || isVoteLoading || areVotesLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Snowflake className="h-16 w-16 animate-spin text-primary" />
       </div>
     );
   }
-
-  const totalVotes = Object.values(votes).reduce((sum, count) => sum + count, 0);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -82,7 +84,7 @@ export default function VotingBoothPage() {
             <h1 className="text-2xl text-primary">Cabina de Votación</h1>
           </div>
           <div className="flex items-center gap-4">
-            <span className="hidden sm:inline text-foreground/80">¡Hola, {user.name}!</span>
+            <span className="hidden sm:inline text-foreground/80">¡Hola, {user.displayName || user.email}!</span>
             <Button variant="ghost" size="icon" onClick={handleLogout} aria-label="Cerrar sesión">
               <LogOut className="h-5 w-5 text-primary" />
             </Button>
@@ -113,7 +115,7 @@ export default function VotingBoothPage() {
         {hasVoted && (
           <section aria-labelledby="results-title">
             <h3 id="results-title" className="text-2xl text-center text-primary mb-6">Resultados en tiempo real</h3>
-            <VoteResults votes={votes} totalVotes={totalVotes} options={votingOptions} />
+            <VoteResults votes={voteCounts} totalVotes={totalVotes} options={votingOptions} />
           </section>
         )}
       </main>

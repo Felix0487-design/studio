@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
-import { USERS, SUPER_SECRET_PASSWORD, SUPER_USER, SUPER_USER_PASSWORD } from '@/lib/auth';
+import { useUser, useAuth } from '@/firebase';
+import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { USERS, SUPER_USER, SUPER_USER_PASSWORD } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -12,15 +13,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Snowflake } from 'lucide-react';
+import { getFirestore, writeBatch, collection, getDocs } from 'firebase/firestore';
+import { useFirestore } from '@/firebase';
 
 export default function LoginPage() {
   const [selectedUser, setSelectedUser] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const { login } = useAuth();
+  const { user, isUserLoading } = useUser();
+  const auth = useAuth();
+  const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
-  const [isClient, setIsClient] = useState(false);
 
   const [snowflakeClicks, setSnowflakeClicks] = useState(0);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
@@ -28,24 +32,29 @@ export default function LoginPage() {
   const [adminPassword, setAdminPassword] = useState('');
 
   useEffect(() => {
-    setIsClient(true);
-  }, []);
+    if (!isUserLoading && user) {
+      router.push('/vote');
+    }
+  }, [user, isUserLoading, router]);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     if (!selectedUser) {
       setError('Por favor, selecciona tu nombre.');
       return;
     }
-    if (password === SUPER_SECRET_PASSWORD) {
-      login(selectedUser);
+    try {
+      // Map username to an email format
+      const email = `${selectedUser.toLowerCase().replace(/\s/g, '')}@navidad-votes.com`;
+      await signInWithEmailAndPassword(auth, email, password);
       router.push('/vote');
-    } else {
-      setError('Contraseña incorrecta. Pista: el vínculo que nos une.');
+    } catch (error) {
+      console.error(error);
+      setError('Credenciales incorrectas. Vuelve a intentarlo.');
       toast({
         title: 'Error de acceso',
-        description: 'Contraseña incorrecta. Vuelve a intentarlo.',
+        description: 'Usuario o contraseña incorrectos.',
         variant: 'destructive',
       });
     }
@@ -60,21 +69,35 @@ export default function LoginPage() {
     }
   };
 
-  const handleAdminLogin = () => {
+  const handleAdminLogin = async () => {
     if (adminUser === SUPER_USER && adminPassword === SUPER_USER_PASSWORD) {
-      localStorage.removeItem('navidad-votes');
-      Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('navidad-voted_')) {
-          localStorage.removeItem(key);
+      try {
+        const batch = writeBatch(firestore);
+        const votesSnapshot = await getDocs(collection(firestore, 'votes'));
+        votesSnapshot.forEach(doc => {
+          batch.delete(doc.ref);
+        });
+        await batch.commit();
+
+        toast({
+          title: 'Votos Reseteados',
+          description: 'Todos los registros de votos han sido eliminados de la base de datos.',
+        });
+        setShowAdminLogin(false);
+        setAdminUser('');
+        setAdminPassword('');
+        // Log out current user if any, to reflect changes
+        if (auth.currentUser) {
+          await signOut(auth);
         }
-      });
-      toast({
-        title: 'Votos Reseteados',
-        description: 'Todos los registros de votos han sido eliminados.',
-      });
-      setShowAdminLogin(false);
-      setAdminUser('');
-      setAdminPassword('');
+      } catch (error) {
+        console.error("Error resetting votes:", error);
+        toast({
+          title: 'Error',
+          description: 'No se pudieron resetear los votos.',
+          variant: 'destructive',
+        });
+      }
     } else {
       toast({
         title: 'Acceso de Administrador Fallido',
@@ -84,9 +107,12 @@ export default function LoginPage() {
     }
   };
 
-
-  if (!isClient) {
-    return null; // Or a loading skeleton
+  if (isUserLoading || user) {
+     return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <Snowflake className="h-16 w-16 animate-spin text-primary" />
+      </div>
+    );
   }
 
   return (
