@@ -12,6 +12,9 @@ interface VoteCardProps {
 }
 
 export default function VoteCard({ option, onVote, disabled, isSelected }: VoteCardProps) {
+  // Extract the main title part for the button
+  const buttonLabel = option.name.startsWith('Opción B: ') ? option.name.substring(11) : 'Sacedón';
+
   return (
     <Card className={cn(
       "flex flex-col transition-all duration-300 transform hover:shadow-xl hover:-translate-y-1",
@@ -38,7 +41,7 @@ export default function VoteCard({ option, onVote, disabled, isSelected }: VoteC
               ¡Votado!
             </>
           ) : (
-            'Votar por este'
+            `Votar por ${buttonLabel}`
           )}
         </Button>
       </CardFooter>

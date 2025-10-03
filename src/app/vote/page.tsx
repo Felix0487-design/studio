@@ -90,7 +90,7 @@ export default function VotePage() {
 
       <main className="container mx-auto p-4 md:p-8">
         <div className="text-center mb-8 md:mb-12">
-          <h2 className="text-3xl md:text-4xl text-primary mb-2">¿Cuál es tu plato preferido?</h2>
+          <h2 className="text-3xl md:text-4xl text-primary mb-2">Propuestas para el Encuentro</h2>
           <p className="text-lg text-foreground/70">
             {hasVoted ? '¡Gracias por tu voto!' : 'Solo puedes votar una vez. ¡Elige con sabiduría!'}
           </p>
