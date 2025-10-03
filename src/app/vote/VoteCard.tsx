@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle2 } from 'lucide-react';
 import type { VotingOption } from '@/lib/voting';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
 
 interface VoteCardProps {
   option: VotingOption;
@@ -12,16 +13,25 @@ interface VoteCardProps {
 }
 
 export default function VoteCard({ option, onVote, disabled, isSelected }: VoteCardProps) {
-  // Extract the main title part for the button
-  const buttonLabel = option.name.startsWith('Opción B: ') ? option.name.substring(11) : 'Sacedón';
 
   return (
     <Card className={cn(
       "flex flex-col transition-all duration-300 transform hover:shadow-xl hover:-translate-y-1",
       isSelected ? "border-primary ring-2 ring-primary shadow-xl" : "shadow-lg",
       disabled && !isSelected ? "opacity-60 saturate-[.8]" : "",
-      "bg-card"
+      "bg-card overflow-hidden"
     )}>
+      {option.imageUrl && (
+        <div className="relative w-full h-40">
+           <Image
+            src={option.imageUrl}
+            alt={option.name}
+            fill
+            style={{ objectFit: 'cover' }}
+            data-ai-hint={option.imageHint}
+           />
+        </div>
+      )}
       <CardHeader>
         <CardTitle className="text-xl text-primary">{option.name}</CardTitle>
       </CardHeader>
@@ -41,7 +51,7 @@ export default function VoteCard({ option, onVote, disabled, isSelected }: VoteC
               ¡Votado!
             </>
           ) : (
-            `Votar por ${buttonLabel}`
+            `Votar por esta opción`
           )}
         </Button>
       </CardFooter>

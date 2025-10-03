@@ -4,17 +4,14 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { votingOptions, type VoteCounts } from '@/lib/voting';
-import VoteCard from './VoteCard';
-import VoteResults from './VoteResults';
 import { Button } from '@/components/ui/button';
-import { LogOut, Snowflake } from 'lucide-react';
+import { LogOut, Snowflake, ExternalLink, ThumbsUp } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 
 export default function VotePage() {
   const { user, isLoading, logout } = useAuth();
   const router = useRouter();
 
-  const [hasVoted, setHasVoted] = useState<string | null>(null);
-  const [votes, setVotes] = useState<VoteCounts>({});
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -26,35 +23,6 @@ export default function VotePage() {
       router.replace('/login');
     }
   }, [user, isLoading, router, isClient]);
-
-  useEffect(() => {
-    if (isClient && user) {
-      const storedHasVoted = localStorage.getItem(`navidad-voted_${user.name}`);
-      setHasVoted(storedHasVoted);
-
-      const storedVotes = localStorage.getItem('navidad-votes');
-      if (storedVotes) {
-        setVotes(JSON.parse(storedVotes));
-      } else {
-        const initialVotes = votingOptions.reduce((acc, option) => {
-          acc[option.id] = 0;
-          return acc;
-        }, {} as VoteCounts);
-        setVotes(initialVotes);
-      }
-    }
-  }, [isClient, user]);
-
-  const handleVote = (optionId: string) => {
-    if (hasVoted || !user) return;
-
-    const newVotes = { ...votes, [optionId]: (votes[optionId] || 0) + 1 };
-    setVotes(newVotes);
-    localStorage.setItem('navidad-votes', JSON.stringify(newVotes));
-
-    localStorage.setItem(`navidad-voted_${user.name}`, optionId);
-    setHasVoted(optionId);
-  };
 
   const handleLogout = () => {
     logout();
@@ -69,7 +37,9 @@ export default function VotePage() {
     );
   }
 
-  const totalVotes = Object.values(votes).reduce((sum, count) => sum + count, 0);
+  const openLink = (url: string) => {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -92,28 +62,61 @@ export default function VotePage() {
         <div className="text-center mb-8 md:mb-12">
           <h2 className="text-3xl md:text-4xl text-primary mb-2">Propuestas para el Encuentro</h2>
           <p className="text-lg text-foreground/70">
-            {hasVoted ? '¡Gracias por tu voto!' : 'Solo puedes votar una vez. ¡Elige con sabiduría!'}
+            Explora las opciones y luego emite tu voto.
           </p>
         </div>
         
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-12">
-          {votingOptions.map(option => (
-            <VoteCard
-              key={option.id}
-              option={option}
-              onVote={() => handleVote(option.id)}
-              disabled={!!hasVoted}
-              isSelected={hasVoted === option.id}
-            />
-          ))}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+          {/* Card A */}
+          <Card className="flex flex-col">
+            <CardHeader>
+              <CardTitle className="text-2xl text-primary">Opción A: Fin de Semana en Sacedón</CardTitle>
+            </CardHeader>
+            <CardContent className="flex-grow space-y-3">
+              <CardDescription>
+                Plan General: Ir a Sacedón, hospedarnos en el Hostal Plaza, cenar y tomar copas en el pueblo. Rutas ligeras por el entorno.
+              </CardDescription>
+              <Button variant="outline" className="w-full justify-between" onClick={() => openLink('https://www.google.com/search?sca_esv=e133efb347e6c9df&sxsrf=AE3TifO9Bz7j2LhxEQtkKwJxw7nO4v5PyA:1759505107420&q=bar+restaurante+hostal+plaza.+sacedon+guadalajara&spell=1&sa=X&ved=2ahUKEwjj7aGnq4iQAxUmVkEAHeXtJWMQBSgAegQIGBAB&biw=1707&bih=772&dpr=1.13')}>
+                Hostal Plaza <ExternalLink className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" className="w-full justify-between" onClick={() => openLink('https://www.alocen.es/')}>
+                Pueblo de Alocén <ExternalLink className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" className="w-full justify-between" onClick={() => openLink('https://carta.menu/restaurants/alocen/mirador-de-alocen')}>
+                Mirador de Alocén <ExternalLink className="h-4 w-4" />
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Card B */}
+          <Card className="flex flex-col">
+            <CardHeader>
+              <CardTitle className="text-2xl text-primary">Opción B: Comida en Restaurante</CardTitle>
+            </CardHeader>
+            <CardContent className="flex-grow space-y-3">
+              <CardDescription>
+                Comer en uno de los siguientes restaurantes locales. Revisa sus cartas y menús.
+              </CardDescription>
+              <Button variant="outline" className="w-full justify-between" onClick={() => openLink('https://www.google.com/search?q=la+taberna+torres+de+la+alameda+carta&oq=La+Taberna.+Torres+de+&aqs=chrome.2.69i57j0i22i30l9.17480j0j7&sourceid=chrome&ie=UTF-8#lpg=ik:CAoSF0NJSE0wb2dLRUlDQWdJREJrLXItdXdF')}>
+                La Taberna (Torres) <ExternalLink className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" className="w-full justify-between" onClick={() => openLink('https://www.google.com/search?q=el+bife+arganda+menu+del+dia&oq=el+Bife&aqs=chrome.2.69i57j46i175i199i512i654j0i512l3j0i20i263i512j46i175i199i512j0i512j46i67i175i199i512i650j0i512.9238j0j4&sourceid=chrome&ie=UTF-8#lpg=ik:CAoSLEFGMVFpcFByWkVETEFfMDdsWVJvUEt')}>
+                El Bife (Arganda) <ExternalLink className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" className="w-full justify-between" onClick={() => openLink('https://www.quintasanantonio.com/carta.html')}>
+                Quinta San Antonio (Velilla) <ExternalLink className="h-4 w-4" />
+              </Button>
+            </CardContent>
+          </Card>
         </div>
 
-        {hasVoted && (
-          <section aria-labelledby="results-title">
-            <h3 id="results-title" className="text-2xl text-center text-primary mb-6">Resultados en tiempo real</h3>
-            <VoteResults votes={votes} totalVotes={totalVotes} options={votingOptions} />
-          </section>
-        )}
+        <div className="text-center">
+            <Button size="lg" onClick={() => router.push('/voting-booth')}>
+                <ThumbsUp className="mr-2 h-5 w-5" />
+                Ir a Votar
+            </Button>
+        </div>
+
       </main>
     </div>
   );
