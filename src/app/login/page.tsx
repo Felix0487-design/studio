@@ -120,7 +120,6 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="********"
                   className="pr-10 bg-white/90 text-black"
-                  style={{ MozOsxFontSmoothing: 'grayscale', WebkitFontSmoothing: 'antialiased', fontFeatureSettings: "'locl' 1, 'ss01' 1", fontVariant: 'tabular-nums', transform: 'scale(1.2)', letterSpacing: '0.2em' }}
                 />
                 <Button
                   type="button"
