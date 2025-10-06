@@ -116,8 +116,6 @@ export default function LoginPage() {
         });
         
         await batch.commit().catch(err => {
-            // Firestore security rules will prevent this if not an admin.
-            // We can assume any error here is a permission error for this special case.
             const permissionError = new FirestorePermissionError({ path: 'votes', operation: 'delete' });
             errorEmitter.emit('permission-error', permissionError);
             throw err;
@@ -129,7 +127,6 @@ export default function LoginPage() {
         });
 
     } catch (error: any) {
-       // The permission error is thrown by the emitter, so we only need to catch other errors.
        if (error.name !== 'FirestorePermissionError') {
         toast({
             title: 'Error al resetear',
@@ -143,19 +140,14 @@ export default function LoginPage() {
 
   const handleAdminLogin = async () => {
     if (adminUser === SUPER_USER && adminPassword === SUPER_USER_PASSWORD) {
-      // Temporarily sign out the current user if one is logged in
-      // to avoid permission issues if we were to grant specific user delete rights.
-      // A more robust solution for a real app would be a server-side function.
       if (auth && auth.currentUser) {
           await signOut(auth);
       }
-      // For this specific app, we can rely on less strict rules for a short time
-      // or use a privileged user. Let's assume the rules allow deletion by an admin.
       await resetVotes();
       setShowAdminLogin(false);
       setAdminUser('');
       setAdminPassword('');
-      router.refresh(); // Refresh the page to reflect logged out state.
+      router.refresh(); 
     } else {
       toast({
         title: 'Acceso de Administrador Fallido',
