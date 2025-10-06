@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -58,8 +59,8 @@ export default function VotingBoothPage() {
   const handleLogout = async () => {
     if (auth) {
       await signOut(auth);
+      router.push('/login');
     }
-    router.push('/login');
   };
 
   const voteCounts = useMemo(() => {
@@ -75,7 +76,7 @@ export default function VotingBoothPage() {
   
   const totalVotes = allVotes.length;
 
-  if (isLoading || !user || votesLoading) {
+  if (isLoading || votesLoading || !user) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Snowflake className="h-16 w-16 animate-spin text-primary" />

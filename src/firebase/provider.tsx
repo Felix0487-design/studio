@@ -1,3 +1,4 @@
+
 // See the 'Firebase Usage Instructions' for more details on working with code scaffolding.
 'use client';
 import {
@@ -20,6 +21,7 @@ import {
   collection,
   onSnapshot,
   doc,
+  query,
 } from 'firebase/firestore';
 
 import {firebaseConfig} from './config';
@@ -45,7 +47,6 @@ const FirebaseContext = createContext<
       user: User | null;
       userDisplayName: string | null;
       isLoading: boolean;
-      isUserLoading: boolean;
       allVotes: Vote[];
       userVote: Vote | null;
       votesLoading: boolean;
@@ -67,7 +68,6 @@ export const FirebaseProvider = ({children}: {children: ReactNode}) => {
   const [user, setUser] = useState<User | null>(null);
   const [userDisplayName, setUserDisplayName] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isUserLoading, setIsUserLoading] = useState(true);
 
   // Voting state
   const [allVotes, setAllVotes] = useState<Vote[]>([]);
@@ -101,46 +101,48 @@ export const FirebaseProvider = ({children}: {children: ReactNode}) => {
       } else {
         setUserDisplayName(null);
       }
-      setIsUserLoading(false);
     });
 
     return () => unsubscribeAuth();
   }, []);
 
   useEffect(() => {
-    if (!db || !user) {
+    if (!db) {
+      setVotesLoading(false);
+      return;
+    }
+    
+    if (!user) {
         setAllVotes([]);
         setUserVote(null);
-        setVotesLoading(!db);
+        setVotesLoading(false); // Not loading if no user
         return;
-    };
+    }
 
     setVotesLoading(true);
 
     const votesCol = collection(db, 'votes');
-    const unsubscribeAllVotes = onSnapshot(votesCol, (snapshot) => {
+    const unsubscribeAllVotes = onSnapshot(query(votesCol), (snapshot) => {
       const votesData = snapshot.docs.map(doc => doc.data() as Vote);
       setAllVotes(votesData);
-      setVotesLoading(false);
-    }, (error) => {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: votesCol.path, operation: 'list' }));
-      setVotesLoading(false);
-    });
 
-    const userVoteDoc = doc(db, 'votes', user.uid);
-    const unsubscribeUserVote = onSnapshot(userVoteDoc, (doc) => {
-      if (doc.exists()) {
-        setUserVote(doc.data() as Vote);
+      const currentUserVote = snapshot.docs.find(doc => doc.id === user.uid);
+      if (currentUserVote) {
+        setUserVote(currentUserVote.data() as Vote);
       } else {
         setUserVote(null);
       }
+      setVotesLoading(false);
     }, (error) => {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: userVoteDoc.path, operation: 'get' }));
+      console.error("Error fetching all votes:", error);
+      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: votesCol.path, operation: 'list' }));
+      setAllVotes([]);
+      setUserVote(null);
+      setVotesLoading(false);
     });
     
     return () => {
         unsubscribeAllVotes();
-        unsubscribeUserVote();
     };
 
   }, [db, user]);
@@ -154,7 +156,6 @@ export const FirebaseProvider = ({children}: {children: ReactNode}) => {
         user,
         userDisplayName,
         isLoading,
-        isUserLoading,
         allVotes,
         userVote,
         votesLoading,

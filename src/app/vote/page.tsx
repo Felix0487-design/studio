@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -29,7 +30,7 @@ export default function VotePage() {
             router.replace('/voted');
         }
     }
-  }, [allVotes, userVote, votesLoading, user, router]);
+  }, [allVotes.length, userVote, votesLoading, user, router, allVotes]);
 
   const handleLogout = async () => {
     if(auth) {
@@ -42,7 +43,7 @@ export default function VotePage() {
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
-  if (isLoading || !user || votesLoading) {
+  if (isLoading || votesLoading || !user) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Snowflake className="h-16 w-16 animate-spin text-primary" />
