@@ -1,5 +1,3 @@
-"use client";
-
 // This file is now simplified as Firebase handles most of the logic.
 // We keep the user list and superuser credentials here for reference.
 

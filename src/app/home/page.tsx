@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { USERS } from '@/lib/auth';
-import { getVotes } from '@/lib/auth'; // Placeholder, will be replaced by firestore logic
 import { Snowflake } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { collection, onSnapshot } from 'firebase/firestore';

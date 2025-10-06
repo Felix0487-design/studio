@@ -56,31 +56,34 @@ export default function LoginPage() {
       return;
     }
 
-    if (!auth) {
+    if (!auth || !db) {
         setError('Servicio de autenticación no disponible. Inténtalo de nuevo más tarde.');
         return;
     }
 
     try {
       const email = `${normalizeString(selectedUser)}@navidad-votes.com`;
-      await signInWithEmailAndPassword(auth, email, password);
-
-      const userDocRef = doc(db, 'votes', auth.currentUser!.uid);
-      const userDoc = await getDoc(userDocRef);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const loggedInUser = userCredential.user;
 
       const votesSnapshot = await getDocs(collection(db, 'votes'));
       const allVotesIn = votesSnapshot.size === USERS.length;
-
+      
       if (allVotesIn) {
         router.push('/results');
-      } else if (userDoc.exists()) {
+        return;
+      }
+      
+      const userDocRef = doc(db, 'votes', loggedInUser.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (userDoc.exists()) {
          toast({
           title: 'Ya has votado',
           description: 'Serás redirigido a la página de votación para ver los resultados parciales.',
         });
         router.push('/voting-booth');
-      }
-      else {
+      } else {
         router.push('/vote');
       }
 
