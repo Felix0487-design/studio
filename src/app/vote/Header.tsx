@@ -24,7 +24,7 @@ export default function Header({ user, onLogout, backPath }: HeaderProps) {
           ) : (
             <Snowflake className="h-6 w-6 text-primary" />
           )}
-          <h1 className="text-2xl text-primary font-headline">Navidad Votes</h1>
+          <h1 className="text-2xl text-primary font-headline">Navidad 2025</h1>
         </div>
         <div className="flex items-center gap-4">
           <span className="hidden sm:inline text-foreground/80">¡Hola, {user}!</span>
