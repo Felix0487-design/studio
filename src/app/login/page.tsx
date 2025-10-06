@@ -36,7 +36,7 @@ export default function LoginPage() {
   
   useEffect(() => {
     if (user) {
-      router.replace('/vote');
+      router.replace('/home');
     } else {
       setIsLoading(false);
     }
@@ -59,13 +59,13 @@ export default function LoginPage() {
     try {
       const email = `${normalizeString(selectedUser)}@navidad-votes.com`;
       await signInWithEmailAndPassword(auth, email, password);
-      router.push('/vote');
+      router.push('/home');
     } catch (error: any) {
        if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
         setError('Credenciales incorrectas. Vuelve a intentarlo.');
         toast({
           title: 'Error de acceso',
-          description: 'Usuario o contraseña incorrectos. La contraseña para todos es "navidad2025".',
+          description: 'Usuario o contraseña incorrectos.',
           variant: 'destructive',
         });
        } else {
@@ -94,7 +94,7 @@ export default function LoginPage() {
         style={{ backgroundImage: "url('/login-background.jpg')" }}
       >
         <div className="absolute inset-0 bg-black/50" />
-        <Card className="relative z-10 w-full max-w-sm shadow-2xl bg-background/10 backdrop-blur-md border-white/20">
+        <Card className="relative z-10 w-full max-w-sm shadow-2xl bg-background/10 backdrop-blur-sm border-white/20">
           <CardContent className="p-8">
             <form onSubmit={handleLogin} className="space-y-6">
               <div className="space-y-2">
@@ -122,7 +122,7 @@ export default function LoginPage() {
               </div>
               {error && <p className="text-sm font-medium text-destructive">{error}</p>}
               <Button type="submit" className="w-full !mt-8">
-                Entrar a Votar
+                Entrar
               </Button>
             </form>
           </CardContent>
@@ -131,4 +131,3 @@ export default function LoginPage() {
     </>
   );
 }
-

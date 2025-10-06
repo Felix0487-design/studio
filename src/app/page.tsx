@@ -12,9 +12,9 @@ export default function RootPage() {
   useEffect(() => {
     if (!isLoading) {
       if (user) {
-        router.replace('/vote');
-      } else {
         router.replace('/home');
+      } else {
+        router.replace('/login');
       }
     }
   }, [isLoading, user, router]);

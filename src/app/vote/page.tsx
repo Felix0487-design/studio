@@ -53,7 +53,7 @@ export default function VotePage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Header user={userDisplayName || 'Usuario'} onLogout={handleLogout} />
+      <Header user={userDisplayName || 'Usuario'} onLogout={handleLogout} backPath="/home" />
 
       <main className="container mx-auto p-4 md:p-8">
         <div className="text-center mb-8 md:mb-12">
