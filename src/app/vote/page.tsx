@@ -94,7 +94,7 @@ export default function VotePage() {
             </CardHeader>
             <CardContent className="flex-grow space-y-3">
               <CardDescription>
-                Plan General: Ir a Sacedón, hospedarnos en el Hostal Plaza, cenar y tomar copas en el pueblo. Rutas ligeras por el entorno.
+                Plan General: Ir a Sacedón, hospedarnos en el Hostal Plaza, cenar y tomar copas en el pueblo. Rutas ligeras por el entorno, ejemplos: Trillo, Alcocen ...
               </CardDescription>
               <Button variant="outline" className="w-full justify-between" onClick={() => openLink('https://www.google.com/search?sca_esv=e133efb347e6c9df&sxsrf=AE3TifO9Bz7j2LhxEQtkKwJxw7nO4v5PyA:1759505107420&q=bar+restaurante+hostal+plaza.+sacedon+guadalajara&spell=1&sa=X&ved=2ahUKEwjj7aGnq4iQAxUmVkEAHeXtJWMQBSgAegQIGBAB&biw=1707&bih=772&dpr=1.13')}>
                 Hostal Plaza <ExternalLink className="h-4 w-4" />
@@ -115,7 +115,7 @@ export default function VotePage() {
             </CardHeader>
             <CardContent className="flex-grow space-y-3">
               <CardDescription>
-                Comer en uno de los siguientes restaurantes locales. Revisa sus cartas y menús.
+                Comer en uno de los siguientes restaurantes. Revisa sus cartas y menús.
               </CardDescription>
               <Button variant="outline" className="w-full justify-between" onClick={() => openLink('https://www.google.com/search?q=la+taberna+torres+de+la+alameda+carta&oq=La+Taberna.+Torres+de+&aqs=chrome.2.69i57j0i22i30l9.17480j0j7&sourceid=chrome&ie=UTF-8#lpg=ik:CAoSF0NJSE0wb2dLRUlDQWdJREJrLXItdXdF')}>
                 La Taberna (Torres) <ExternalLink className="h-4 w-4" />
