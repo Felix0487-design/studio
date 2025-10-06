@@ -49,7 +49,7 @@ export default function VoteCard({ option, onVote, disabled, isSelected }: VoteC
           {isSelected ? (
             <>
               <CheckCircle2 className="mr-2 h-5 w-5" />
-              ¡Votado!
+              Vota
             </>
           ) : (
             `Votar por esta opción`
