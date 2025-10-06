@@ -59,8 +59,8 @@ export default function LoginPage() {
     }
 
     if (!auth || !db) {
-        setError('Servicio de autenticación no disponible. Inténtalo de nuevo más tarde.');
-        return;
+      setError('Servicio de autenticación no disponible. Inténtalo de nuevo más tarde.');
+      return;
     }
 
     try {
@@ -68,6 +68,10 @@ export default function LoginPage() {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const loggedInUser = userCredential.user;
 
+      // The rest of the logic runs after successful login, handled by useEffect and page navigations
+      // which already have their own error handling.
+      // This try-catch is now specifically for login failure.
+      
       const votesCol = collection(db, 'votes');
       const votesSnapshot = await getDocs(votesCol).catch(err => {
         const permissionError = new FirestorePermissionError({
@@ -75,10 +79,13 @@ export default function LoginPage() {
             operation: 'list',
         });
         errorEmitter.emit('permission-error', permissionError);
-        throw err;
+        // We don't re-throw, as login was successful. The app will navigate.
+        return null; 
       });
+
+      if (!votesSnapshot) return; // Error was handled, stop execution here.
+
       const allVotesIn = votesSnapshot.size === USERS.length;
-      
       if (allVotesIn) {
         router.push('/results');
         return;
@@ -91,8 +98,11 @@ export default function LoginPage() {
             operation: 'get',
         });
         errorEmitter.emit('permission-error', permissionError);
-        throw err;
+        // We don't re-throw, as login was successful.
+        return null;
       });
+
+      if (!userDoc) return; // Error was handled, stop execution here.
 
       if (userDoc.exists()) {
          toast({
@@ -105,14 +115,13 @@ export default function LoginPage() {
       }
 
     } catch (error: any) {
-       if (error.name !== 'FirestorePermissionError') {
-         setError('Credenciales incorrectas. Vuelve a intentarlo.');
-         toast({
-          title: 'Error de acceso',
-          description: 'Usuario o contraseña incorrectos.',
-          variant: 'destructive',
-        });
-       }
+      // This catch block now correctly handles only authentication errors
+      setError('Credenciales incorrectas. Vuelve a intentarlo.');
+      toast({
+        title: 'Error de acceso',
+        description: 'Usuario o contraseña incorrectos.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -144,9 +153,10 @@ export default function LoginPage() {
             batch.delete(doc.ref);
         });
         
-        batch.commit().catch(err => {
+        await batch.commit().catch(err => {
             const permissionError = new FirestorePermissionError({ path: 'votes', operation: 'delete' });
             errorEmitter.emit('permission-error', permissionError);
+            throw err;
         });
 
         toast({
@@ -225,7 +235,7 @@ export default function LoginPage() {
                   id="password"
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => setPassword(e.targe.value)}
                   placeholder="********"
                 />
                  <p className="text-xs text-muted-foreground pt-1">Pista: el vínculo que nos une.</p>
@@ -277,3 +287,5 @@ export default function LoginPage() {
     </>
   );
 }
+
+    
