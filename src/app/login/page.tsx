@@ -75,7 +75,7 @@ export default function LoginPage() {
       setError('Credenciales incorrectas. Vuelve a intentarlo.');
       toast({
         title: 'Error de acceso',
-        description: 'Usuario o contraseña incorrectos.',
+        description: 'Usuario o contraseña incorrectos. Revisa que el usuario esté creado y la contraseña sea "navidad2025".',
         variant: 'destructive',
       });
     }
@@ -195,7 +195,7 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="********"
                 />
-                 <p className="text-xs text-muted-foreground pt-1">Pista: el vínculo que nos une.</p>
+                 <p className="text-xs text-muted-foreground pt-1">Pista: La contraseña para todos es 'navidad2025'.</p>
               </div>
               {error && <p className="text-sm font-medium text-destructive">{error}</p>}
               <Button type="submit" className="w-full !mt-8">
@@ -244,5 +244,3 @@ export default function LoginPage() {
     </>
   );
 }
-
-    
