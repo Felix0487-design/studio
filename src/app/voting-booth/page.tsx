@@ -57,6 +57,8 @@ export default function VotingBoothPage() {
     const unsubscribeUser = onSnapshot(userVoteDoc, (doc) => {
       if (doc.exists()) {
         setUserVote(doc.data() as Vote);
+      } else {
+        setUserVote(null);
       }
     }, (error) => {
        const permissionError = new FirestorePermissionError({
