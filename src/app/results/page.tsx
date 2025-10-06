@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -18,7 +19,7 @@ type Vote = {
 
 export default function ResultsPage() {
   const router = useRouter();
-  const { auth, user, userDisplayName, isLoading, allVotes, votesLoading } = useFirebase();
+  const { auth, user, userDisplayName, isLoading, allVotes, votesLoading, userVote } = useFirebase();
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -80,13 +81,16 @@ export default function ResultsPage() {
       </div>
     );
   }
+  
+  const hasVoted = !!userVote;
+  const allVoted = totalVotes === USERS.length;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Header user={userDisplayName || 'Usuario'} onLogout={handleLogout} />
+      <Header user={userDisplayName || 'Usuario'} onLogout={handleLogout} showVoteButton={!hasVoted && !allVoted} />
 
       <main 
-        className="relative min-h-[calc(100vh-65px)] bg-cover bg-center bg-no-repeat p-4 md:p-8"
+        className="relative min-h-[calc(100vh-81px)] bg-cover bg-center bg-no-repeat p-4 md:p-8"
         style={{ backgroundImage: "url('/login-background.jpg')" }}
       >
         <div className="absolute inset-0 bg-black/70" />

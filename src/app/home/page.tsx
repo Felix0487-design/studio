@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect } from 'react';
@@ -11,17 +12,13 @@ import { signOut } from 'firebase/auth';
 
 export default function HomePage() {
   const router = useRouter();
-  const { auth, user, userDisplayName, isLoading, allVotes, votesLoading } = useFirebase();
+  const { auth, user, userDisplayName, isLoading, allVotes, votesLoading, userVote } = useFirebase();
 
   useEffect(() => {
     if (!isLoading && !user) {
       router.replace('/login');
     }
   }, [isLoading, user, router]);
-
-  const handleAccess = () => {
-    router.push('/vote');
-  };
 
   const handleLogout = async () => {
     if(auth) {
@@ -40,12 +37,14 @@ export default function HomePage() {
   
   const votesCount = allVotes.length;
   const remainingVotes = USERS.length - votesCount;
+  const hasVoted = !!userVote;
+  const allVoted = votesCount === USERS.length;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Header user={userDisplayName || 'Usuario'} onLogout={handleLogout} />
+      <Header user={userDisplayName || 'Usuario'} onLogout={handleLogout} showVoteButton={!hasVoted && !allVoted} />
       <main
-        className="relative min-h-[calc(100vh-65px)] bg-cover bg-center bg-no-repeat p-8 text-white"
+        className="relative min-h-[calc(100vh-81px)] bg-cover bg-center bg-no-repeat p-8 text-white"
         style={{ backgroundImage: "url('/login-background.jpg')" }}
       >
         <div className="absolute inset-0 bg-black/60" />
@@ -80,9 +79,11 @@ export default function HomePage() {
               </div>
           )}
 
-          <Button size="lg" onClick={handleAccess} className="mt-4 animate-pulse">
-            Propuestas
-          </Button>
+          {!hasVoted && !allVoted && (
+             <Button size="lg" onClick={() => router.push('/vote')} className="mt-4 animate-pulse">
+                Ver Propuestas y Votar
+             </Button>
+          )}
         </div>
       </main>
     </div>

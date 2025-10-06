@@ -27,7 +27,7 @@ export default function VotePage() {
         if (allVotes.length === USERS.length) {
             router.replace('/results');
         } else if (userVote) {
-            router.replace('/voted');
+            // If the user has voted, they can see proposals, but the main action is to see the voted page
         }
     }
   }, [allVotes.length, userVote, votesLoading, user, router, allVotes]);
@@ -51,12 +51,15 @@ export default function VotePage() {
     );
   }
 
+  const hasVoted = !!userVote;
+  const allVoted = allVotes.length === USERS.length;
+
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Header user={userDisplayName || 'Usuario'} onLogout={handleLogout} backPath="/home" />
+      <Header user={userDisplayName || 'Usuario'} onLogout={handleLogout} showVoteButton={!hasVoted && !allVoted} />
 
       <main 
-        className="relative min-h-[calc(100vh-65px)] bg-cover bg-center bg-no-repeat p-4 md:p-8"
+        className="relative min-h-[calc(100vh-81px)] bg-cover bg-center bg-no-repeat p-4 md:p-8"
         style={{ backgroundImage: "url('/login-background.jpg')" }}
       >
         <div className="absolute inset-0 bg-black/70" />
@@ -64,8 +67,9 @@ export default function VotePage() {
           <div className="text-center mb-8 md:mb-12 text-white">
             <h2 className="text-3xl md:text-4xl font-headline mb-2 drop-shadow-md">Propuestas para el encuentro</h2>
             <p className="text-lg text-white/80">
-              Explora las opciones y luego emite tu voto {userDisplayName}. Cada opción tiene enlaces de los lugares propuestos.
+              Explora las opciones {userDisplayName}. Cada opción tiene enlaces a los lugares propuestos.
             </p>
+             {hasVoted && <p className='mt-4 text-accent font-bold'>Ya has emitido tu voto.</p>}
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
@@ -112,16 +116,8 @@ export default function VotePage() {
             </Card>
           </div>
 
-          <div className="text-center">
-              <Button size="lg" onClick={() => router.push('/voting-booth')}>
-                  <ThumbsUp className="mr-2 h-5 w-5" />
-                  Ir a Votar
-              </Button>
-          </div>
         </div>
       </main>
     </div>
   );
 }
-
-    
