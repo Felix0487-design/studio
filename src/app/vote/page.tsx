@@ -123,3 +123,5 @@ export default function VotePage() {
     </div>
   );
 }
+
+    
