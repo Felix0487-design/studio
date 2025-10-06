@@ -28,7 +28,7 @@ export const votingOptions: VotingOption[] = [
     imageUrl: "/bife.jpg",
     imageHint: "steakhouse grill"
   },
-  { d: 'quinta', 
+  { id: 'quinta', 
     name: 'Opción B: QUINTA SAN ANTONIO, Velilla', 
     description: 'Un sitio que ya conocemos, con un ambiente agradable y con mesa redonda asegurada.',
     imageUrl: "/quinta.jpg",
