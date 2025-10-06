@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Snowflake } from 'lucide-react';
+import { Snowflake, Eye, EyeOff } from 'lucide-react';
 import { useFirebase } from '@/firebase/provider';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 
@@ -27,6 +27,7 @@ const normalizeString = (str: string) => {
 export default function LoginPage() {
   const [selectedUser, setSelectedUser] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
   const { toast } = useToast();
@@ -110,15 +111,26 @@ export default function LoginPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
+              <div className="relative space-y-2">
                 <Label htmlFor="password" className="text-white">Contraseña</Label>
                 <Input
                   id="password"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="********"
+                  className="pr-10"
                 />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-7 h-7 w-7 text-white hover:bg-white/10"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff /> : <Eye />}
+                  <span className="sr-only">{showPassword ? 'Ocultar' : 'Mostrar'} contraseña</span>
+                </Button>
               </div>
               {error && <p className="text-sm font-medium text-destructive">{error}</p>}
               <Button type="submit" className="w-full !mt-8">
