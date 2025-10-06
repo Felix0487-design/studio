@@ -92,7 +92,7 @@ export default function LoginPage() {
   return (
     <>
       <main 
-        className="relative flex min-h-screen items-center justify-center bg-cover bg-center p-4"
+        className="relative flex min-h-screen items-center justify-center bg-cover bg-center p-4 group"
         style={{ backgroundImage: "url('/login-background.jpg')" }}
       >
         <div className="absolute inset-0 bg-black/60" />
@@ -139,7 +139,7 @@ export default function LoginPage() {
               </Button>
             </form>
              <div className="mt-4 text-center text-xs">
-              <Link href="/admin" className="text-white/50 hover:text-white/80 transition-colors">
+              <Link href="/admin" className="text-white/50 hover:text-white/80 transition-opacity opacity-0 group-hover:opacity-100">
                 Admin Panel
               </Link>
             </div>
