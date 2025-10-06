@@ -1,57 +1,49 @@
 "use client";
 
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser, useAuth } from '@/firebase';
 import { Button } from '@/components/ui/button';
-import { LogOut, Snowflake, ExternalLink, ThumbsUp } from 'lucide-react';
+import { ThumbsUp } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { signOut } from 'firebase/auth';
+import { getCurrentUser, logoutUser } from '@/lib/auth';
+import Header from './Header';
+import { ExternalLink } from 'lucide-react';
 
 export default function VotePage() {
-  const { user, isUserLoading } = useUser();
-  const auth = useAuth();
+  const [user, setUser] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    if (!isUserLoading && !user) {
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
       router.replace('/login');
+    } else {
+      setUser(currentUser);
+      setIsLoading(false);
     }
-  }, [user, isUserLoading, router]);
+  }, [router]);
 
-  const handleLogout = async () => {
-    await signOut(auth);
+  const handleLogout = () => {
+    logoutUser();
     router.push('/login');
   };
-
-  if (isUserLoading || !user) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-background">
-        <Snowflake className="h-16 w-16 animate-spin text-primary" />
-      </div>
-    );
-  }
 
   const openLink = (url: string) => {
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
+  if (isLoading || !user) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <div className="h-16 w-16 animate-spin rounded-full border-4 border-dashed border-primary"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur-sm">
-        <div className="container mx-auto flex items-center justify-between p-4">
-          <div className="flex items-center gap-2">
-            <Snowflake className="h-6 w-6 text-primary" />
-            <h1 className="text-2xl text-primary">Navidad Votes</h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="hidden sm:inline text-foreground/80">¡Hola, {user.displayName || user.email}!</span>
-            <Button variant="ghost" size="icon" onClick={handleLogout} aria-label="Cerrar sesión">
-              <LogOut className="h-5 w-5 text-primary" />
-            </Button>
-          </div>
-        </div>
-      </header>
+      <Header user={user} onLogout={handleLogout} />
 
       <main className="container mx-auto p-4 md:p-8">
         <div className="text-center mb-8 md:mb-12">

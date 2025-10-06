@@ -2,9 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser, useAuth } from '@/firebase';
-import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import { USERS, SUPER_USER, SUPER_USER_PASSWORD } from '@/lib/auth';
+import { USERS, SUPER_SECRET_PASSWORD, SUPER_USER, SUPER_USER_PASSWORD, getVotes, resetVotes, getCurrentUser, setCurrentUser, logoutUser } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -13,58 +11,71 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Snowflake } from 'lucide-react';
-import { getFirestore, writeBatch, collection, getDocs } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
-
-// Función para normalizar el email eliminando tildes
-const normalizeEmail = (name: string) => {
-  const normalized = name
-    .toLowerCase()
-    .normalize("NFD") // Descompone caracteres en su forma base y diacríticos
-    .replace(/[\u0300-\u036f]/g, ""); // Elimina los diacríticos (tildes, etc.)
-  return `${normalized.replace(/\s/g, '')}@navidad-votes.com`;
-};
 
 export default function LoginPage() {
   const [selectedUser, setSelectedUser] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const { user, isUserLoading } = useUser();
-  const auth = useAuth();
-  const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
 
+  const [isLoading, setIsLoading] = useState(true);
   const [snowflakeClicks, setSnowflakeClicks] = useState(0);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [adminUser, setAdminUser] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
-
+  const [votes, setVotes] = useState<Record<string, string>>({});
+  
   useEffect(() => {
-    if (!isUserLoading && user) {
-      router.push('/vote');
+    const user = getCurrentUser();
+    const storedVotes = getVotes();
+    setVotes(storedVotes);
+    
+    if (user) {
+      if (Object.keys(storedVotes).length === USERS.length) {
+        router.replace('/results');
+      } else {
+        router.replace('/vote');
+      }
+    } else {
+      setIsLoading(false);
     }
-  }, [user, isUserLoading, router]);
+  }, [router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
     if (!selectedUser) {
       setError('Por favor, selecciona tu nombre.');
       return;
     }
-    try {
-      const email = normalizeEmail(selectedUser);
-      await signInWithEmailAndPassword(auth, email, password);
-      router.push('/vote');
-    } catch (error) {
-      console.error(error);
+
+    if (password !== SUPER_SECRET_PASSWORD) {
       setError('Credenciales incorrectas. Vuelve a intentarlo.');
       toast({
         title: 'Error de acceso',
-        description: 'Usuario o contraseña incorrectos.',
+        description: 'Contraseña incorrecta.',
         variant: 'destructive',
       });
+      return;
+    }
+
+    // Check if user has already voted
+    if (votes[selectedUser]) {
+      toast({
+        title: 'Ya has votado',
+        description: 'Ya has emitido tu voto anteriormente. Serás redirigido a la página de votación.',
+        variant: 'default',
+      });
+    }
+
+    setCurrentUser(selectedUser);
+    
+    if (Object.keys(getVotes()).length === USERS.length) {
+        router.push('/results');
+    } else {
+        router.push('/vote');
     }
   };
 
@@ -79,33 +90,16 @@ export default function LoginPage() {
 
   const handleAdminLogin = async () => {
     if (adminUser === SUPER_USER && adminPassword === SUPER_USER_PASSWORD) {
-      try {
-        const batch = writeBatch(firestore);
-        const votesSnapshot = await getDocs(collection(firestore, 'votes'));
-        votesSnapshot.forEach(doc => {
-          batch.delete(doc.ref);
-        });
-        await batch.commit();
-
-        toast({
-          title: 'Votos Reseteados',
-          description: 'Todos los registros de votos han sido eliminados de la base de datos.',
-        });
-        setShowAdminLogin(false);
-        setAdminUser('');
-        setAdminPassword('');
-        // Log out current user if any, to reflect changes
-        if (auth.currentUser) {
-          await signOut(auth);
-        }
-      } catch (error) {
-        console.error("Error resetting votes:", error);
-        toast({
-          title: 'Error',
-          description: 'No se pudieron resetear los votos.',
-          variant: 'destructive',
-        });
-      }
+      resetVotes();
+      logoutUser(); // Log out current user if any
+      toast({
+        title: 'Votos Reseteados',
+        description: 'Todos los registros de votos han sido eliminados.',
+      });
+      setShowAdminLogin(false);
+      setAdminUser('');
+      setAdminPassword('');
+      router.refresh(); // Refresh page to reflect changes
     } else {
       toast({
         title: 'Acceso de Administrador Fallido',
@@ -115,7 +109,7 @@ export default function LoginPage() {
     }
   };
 
-  if (isUserLoading || user) {
+  if (isLoading) {
      return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Snowflake className="h-16 w-16 animate-spin text-primary" />
