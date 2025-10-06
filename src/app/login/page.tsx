@@ -68,16 +68,24 @@ export default function LoginPage() {
     try {
       const email = `${normalizeString(selectedUser)}@navidad-votes.com`;
       await signInWithEmailAndPassword(auth, email, password);
-      // On successful login, the useEffect will trigger the redirect to '/vote'
       router.push('/vote');
     } catch (error: any) {
       console.error("Login failed:", error);
-      setError('Credenciales incorrectas. Vuelve a intentarlo.');
-      toast({
-        title: 'Error de acceso',
-        description: 'Usuario o contraseña incorrectos. Revisa que el usuario esté creado y la contraseña sea "navidad2025".',
-        variant: 'destructive',
-      });
+       if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+        setError('Credenciales incorrectas. Vuelve a intentarlo.');
+        toast({
+          title: 'Error de acceso',
+          description: 'Usuario o contraseña incorrectos. Revisa que el usuario esté creado y la contraseña sea "navidad2025".',
+          variant: 'destructive',
+        });
+       } else {
+        setError('Ha ocurrido un error inesperado.');
+        toast({
+          title: 'Error',
+          description: 'No se pudo iniciar sesión. Por favor, inténtalo de nuevo más tarde.',
+          variant: 'destructive',
+        });
+       }
     }
   };
 
@@ -110,7 +118,6 @@ export default function LoginPage() {
         });
         
         await batch.commit().catch(err => {
-            // Emitting a general delete error as we don't have a specific doc ref
             const permissionError = new FirestorePermissionError({ path: 'votes', operation: 'delete' });
             errorEmitter.emit('permission-error', permissionError);
             throw err;
@@ -162,8 +169,13 @@ export default function LoginPage() {
 
   return (
     <>
-      <div className="flex min-h-screen items-center justify-center bg-background p-4">
-        <Card className="w-full max-w-md shadow-2xl border-border/50">
+      <main 
+        className="relative flex min-h-screen items-center justify-center bg-cover bg-center p-4"
+        style={{ backgroundImage: "url('https://picsum.photos/seed/christmas-login/1920/1080')" }}
+        data-ai-hint="christmas lights"
+      >
+        <div className="absolute inset-0 bg-black/60" />
+        <Card className="relative z-10 w-full max-w-md shadow-2xl bg-background/90 backdrop-blur-sm border-border/50">
           <CardHeader className="text-center">
             <div className="mx-auto mb-4 flex items-center justify-center cursor-pointer" onClick={handleSnowflakeClick} title="Haz clic tres veces para opciones de administrador">
               <Snowflake className="h-8 w-8 text-primary" />
@@ -204,7 +216,7 @@ export default function LoginPage() {
             </form>
           </CardContent>
         </Card>
-      </div>
+      </main>
 
       <Dialog open={showAdminLogin} onOpenChange={setShowAdminLogin}>
         <DialogContent>
