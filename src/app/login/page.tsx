@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -13,13 +14,14 @@ import { useToast } from '@/hooks/use-toast';
 import { Snowflake } from 'lucide-react';
 import { useFirebase } from '@/firebase/provider';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import { doc, getDoc, writeBatch } from 'firebase/firestore';
+import { writeBatch } from 'firebase/firestore';
 import { collection, getDocs } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
 
 const normalizeString = (str: string) => {
+  if (!str) return '';
   return str
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
@@ -65,57 +67,11 @@ export default function LoginPage() {
 
     try {
       const email = `${normalizeString(selectedUser)}@navidad-votes.com`;
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const loggedInUser = userCredential.user;
-
-      // The rest of the logic runs after successful login, handled by useEffect and page navigations
-      // which already have their own error handling.
-      // This try-catch is now specifically for login failure.
-      
-      const votesCol = collection(db, 'votes');
-      const votesSnapshot = await getDocs(votesCol).catch(err => {
-        const permissionError = new FirestorePermissionError({
-            path: votesCol.path,
-            operation: 'list',
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        // We don't re-throw, as login was successful. The app will navigate.
-        return null; 
-      });
-
-      if (!votesSnapshot) return; // Error was handled, stop execution here.
-
-      const allVotesIn = votesSnapshot.size === USERS.length;
-      if (allVotesIn) {
-        router.push('/results');
-        return;
-      }
-      
-      const userDocRef = doc(db, 'votes', loggedInUser.uid);
-      const userDoc = await getDoc(userDocRef).catch(err => {
-         const permissionError = new FirestorePermissionError({
-            path: userDocRef.path,
-            operation: 'get',
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        // We don't re-throw, as login was successful.
-        return null;
-      });
-
-      if (!userDoc) return; // Error was handled, stop execution here.
-
-      if (userDoc.exists()) {
-         toast({
-          title: 'Ya has votado',
-          description: 'Serás redirigido a la página de votación para ver los resultados parciales.',
-        });
-        router.push('/voting-booth');
-      } else {
-        router.push('/vote');
-      }
-
+      await signInWithEmailAndPassword(auth, email, password);
+      // On successful login, the useEffect will trigger the redirect to '/vote'
+      router.push('/vote');
     } catch (error: any) {
-      // This catch block now correctly handles only authentication errors
+      console.error("Login failed:", error);
       setError('Credenciales incorrectas. Vuelve a intentarlo.');
       toast({
         title: 'Error de acceso',
@@ -154,6 +110,7 @@ export default function LoginPage() {
         });
         
         await batch.commit().catch(err => {
+            // Emitting a general delete error as we don't have a specific doc ref
             const permissionError = new FirestorePermissionError({ path: 'votes', operation: 'delete' });
             errorEmitter.emit('permission-error', permissionError);
             throw err;
@@ -287,3 +244,5 @@ export default function LoginPage() {
     </>
   );
 }
+
+    

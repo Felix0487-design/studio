@@ -1,3 +1,4 @@
+
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2 } from 'lucide-react';
@@ -58,3 +59,5 @@ export default function VoteCard({ option, onVote, disabled, isSelected }: VoteC
     </Card>
   );
 }
+
+    
