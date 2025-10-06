@@ -169,7 +169,7 @@ export default function LoginPage() {
     <>
       <main 
         className="relative flex min-h-screen items-center justify-center bg-cover bg-center p-4"
-        style={{ backgroundImage: "url('https://picsum.photos/seed/christmas-login/1920/1080')" }}
+        style={{ backgroundImage: "url('URL_DE_TU_IMAGEN_AQUI')" }}
         data-ai-hint="christmas lights"
       >
         <div className="absolute inset-0 bg-black/60" />
