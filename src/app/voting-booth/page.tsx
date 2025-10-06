@@ -11,6 +11,8 @@ import Header from '../vote/Header';
 import { useFirebase } from '@/firebase/provider';
 import { collection, doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 type Vote = {
   optionId: string;
@@ -42,6 +44,12 @@ export default function VotingBoothPage() {
       if (votesData.length === USERS.length) {
         router.replace('/results');
       }
+    }, (error) => {
+      const permissionError = new FirestorePermissionError({
+        path: votesCol.path,
+        operation: 'list',
+      });
+      errorEmitter.emit('permission-error', permissionError);
     });
 
     // Listen for the current user's vote
@@ -50,6 +58,12 @@ export default function VotingBoothPage() {
       if (doc.exists()) {
         setUserVote(doc.data() as Vote);
       }
+    }, (error) => {
+       const permissionError = new FirestorePermissionError({
+        path: userVoteDoc.path,
+        operation: 'get',
+      });
+      errorEmitter.emit('permission-error', permissionError);
     });
 
     return () => {
@@ -67,11 +81,16 @@ export default function VotingBoothPage() {
       userName: userDisplayName || 'Anónimo',
     };
     
-    try {
-      await setDoc(doc(db, 'votes', user.uid), voteData);
-    } catch(e) {
-      console.error("Error writing document: ", e);
-    }
+    const voteRef = doc(db, 'votes', user.uid);
+    setDoc(voteRef, voteData)
+      .catch((error) => {
+        const permissionError = new FirestorePermissionError({
+            path: voteRef.path,
+            operation: 'create',
+            requestResourceData: voteData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+    });
   };
 
   const handleLogout = async () => {

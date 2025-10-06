@@ -11,6 +11,8 @@ import Header from '../vote/Header';
 import { useFirebase } from '@/firebase/provider';
 import { collection, getDocs, onSnapshot } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 type Vote = {
   optionId: string;
@@ -40,7 +42,11 @@ export default function ResultsPage() {
       setVotes(votesData);
       setIsLoading(false);
     }, (error) => {
-      console.error("Error fetching votes:", error);
+      const permissionError = new FirestorePermissionError({
+        path: votesCol.path,
+        operation: 'list',
+      });
+      errorEmitter.emit('permission-error', permissionError);
       setIsLoading(false);
     });
 

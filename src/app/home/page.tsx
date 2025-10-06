@@ -8,6 +8,8 @@ import { Snowflake } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { useFirebase } from '@/firebase/provider';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 
 export default function HomePage() {
@@ -27,7 +29,11 @@ export default function HomePage() {
       setVotesCount(snapshot.size);
       setIsLoading(false);
     }, (error) => {
-      console.error("Error fetching vote count:", error);
+      const permissionError = new FirestorePermissionError({
+        path: votesCol.path,
+        operation: 'list',
+      });
+      errorEmitter.emit('permission-error', permissionError);
       setIsLoading(false);
     });
 

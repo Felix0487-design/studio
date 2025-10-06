@@ -13,16 +13,15 @@ import {
   Auth,
   onAuthStateChanged,
   User,
-  connectAuthEmulator,
 } from 'firebase/auth';
 import {
   getFirestore,
   Firestore,
-  connectFirestoreEmulator,
 } from 'firebase/firestore';
 
 import {firebaseConfig} from './config';
 import { USERS } from '@/lib/auth';
+import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
 /**
  * `FirebaseContext` providers access to the Firebase app instance
@@ -102,6 +101,7 @@ export const FirebaseProvider = ({children}: {children: ReactNode}) => {
         isUserLoading,
       }}
     >
+      <FirebaseErrorListener />
       {children}
     </FirebaseContext.Provider>
   );
