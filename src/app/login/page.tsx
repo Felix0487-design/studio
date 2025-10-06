@@ -235,7 +235,7 @@ export default function LoginPage() {
                   id="password"
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.targe.value)}
+                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="********"
                 />
                  <p className="text-xs text-muted-foreground pt-1">Pista: el vínculo que nos une.</p>
@@ -287,5 +287,3 @@ export default function LoginPage() {
     </>
   );
 }
-
-    
