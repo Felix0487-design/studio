@@ -64,7 +64,7 @@ export default function VotePage() {
           <div className="text-center mb-8 md:mb-12 text-white">
             <h2 className="text-3xl md:text-4xl font-headline mb-2 drop-shadow-md">Propuestas para el encuentro</h2>
             <p className="text-lg text-white/80">
-              Explora las opciones y luego emite tu voto {userDisplayName}. Cada opcion tiene enlaces de los lugares propuestos.
+              Explora las opciones y luego emite tu voto {userDisplayName}. Cada opción tiene enlaces de los lugares propuestos.
             </p>
           </div>
           

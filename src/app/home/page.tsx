@@ -81,7 +81,7 @@ export default function HomePage() {
           )}
 
           <Button size="lg" onClick={handleAccess} className="mt-4 animate-pulse">
-            Acceder para Votar
+            Propuestas
           </Button>
         </div>
       </main>
