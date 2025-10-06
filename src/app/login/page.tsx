@@ -169,8 +169,7 @@ export default function LoginPage() {
     <>
       <main 
         className="relative flex min-h-screen items-center justify-center bg-cover bg-center p-4"
-        style={{ backgroundImage: "url('URL_DE_TU_IMAGEN_AQUI')" }}
-        data-ai-hint="christmas lights"
+        style={{ backgroundImage: "url('/login-background.jpg')" }}
       >
         <div className="absolute inset-0 bg-black/60" />
         <Card className="relative z-10 w-full max-w-md shadow-2xl bg-background/90 backdrop-blur-sm border-border/50">
