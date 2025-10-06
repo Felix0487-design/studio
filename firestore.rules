@@ -1,14 +1,14 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Allow logged-in users to create their own vote, but not to update or delete.
-    // Allow anyone to read the votes collection to see the count.
-    match /votes/{userId} {
+    match /votes/{voteId} {
+      // Allow anyone to read the votes (get, list)
       allow read: if true;
+      // Allow only authenticated users to create their own vote document
       allow create: if request.auth != null;
+      // Disallow updates and deletes
+      allow update, delete: if false;
     }
   }
 }
