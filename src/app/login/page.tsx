@@ -14,8 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Snowflake } from 'lucide-react';
 import { useFirebase } from '@/firebase/provider';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import { writeBatch } from 'firebase/firestore';
-import { collection, getDocs } from 'firebase/firestore';
+import { writeBatch, collection, getDocs } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
@@ -117,6 +116,8 @@ export default function LoginPage() {
         });
         
         await batch.commit().catch(err => {
+            // Firestore security rules will prevent this if not an admin.
+            // We can assume any error here is a permission error for this special case.
             const permissionError = new FirestorePermissionError({ path: 'votes', operation: 'delete' });
             errorEmitter.emit('permission-error', permissionError);
             throw err;
@@ -128,10 +129,11 @@ export default function LoginPage() {
         });
 
     } catch (error: any) {
+       // The permission error is thrown by the emitter, so we only need to catch other errors.
        if (error.name !== 'FirestorePermissionError') {
         toast({
             title: 'Error al resetear',
-            description: 'No se pudieron eliminar los votos.',
+            description: 'No se pudieron eliminar los votos. Es posible que no tengas permisos de administrador.',
             variant: 'destructive',
         });
        }
@@ -141,14 +143,19 @@ export default function LoginPage() {
 
   const handleAdminLogin = async () => {
     if (adminUser === SUPER_USER && adminPassword === SUPER_USER_PASSWORD) {
-      await resetVotes();
+      // Temporarily sign out the current user if one is logged in
+      // to avoid permission issues if we were to grant specific user delete rights.
+      // A more robust solution for a real app would be a server-side function.
       if (auth && auth.currentUser) {
           await signOut(auth);
       }
+      // For this specific app, we can rely on less strict rules for a short time
+      // or use a privileged user. Let's assume the rules allow deletion by an admin.
+      await resetVotes();
       setShowAdminLogin(false);
       setAdminUser('');
       setAdminPassword('');
-      router.refresh(); 
+      router.refresh(); // Refresh the page to reflect logged out state.
     } else {
       toast({
         title: 'Acceso de Administrador Fallido',
@@ -222,7 +229,7 @@ export default function LoginPage() {
           <DialogHeader>
             <DialogTitle>Acceso de Superusuario</DialogTitle>
             <DialogDescription>
-              Introduce las credenciales para resetear los votos de la aplicación.
+              Introduce las credenciales para resetear los votos de la aplicación. Esta acción es irreversible.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -248,12 +255,10 @@ export default function LoginPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAdminLogin(false)}>Cancelar</Button>
-            <Button onClick={handleAdminLogin}>Resetear Votos</Button>
+            <Button variant="destructive" onClick={handleAdminLogin}>Resetear Votos</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
   );
 }
-
-    

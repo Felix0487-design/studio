@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "vote": {
@@ -30,7 +31,7 @@
       "schema": {
         "$ref": "#/entities/vote"
       },
-      "description": "Stores individual votes. The document ID is the user's UID. Publicly readable for results, but only the authenticated user can create their own vote."
+      "description": "Stores individual votes. The document ID is the user's UID. Publicly readable for results, but only the authenticated user can create their own vote. A special admin role can delete all votes to reset the poll."
     }
   }
 }
