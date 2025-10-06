@@ -30,7 +30,7 @@
       "schema": {
         "$ref": "#/entities/vote"
       },
-      "description": "Stores individual votes from users. The document ID is the user's UID to ensure one vote per user."
+      "description": "Stores individual votes. The document ID is the user's UID. Publicly readable for results, but only the authenticated user can create their own vote."
     }
   }
 }
