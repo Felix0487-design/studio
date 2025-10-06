@@ -52,7 +52,7 @@ export default function VotedPage() {
 
         <Card className="relative z-10 w-full max-w-md text-center shadow-2xl bg-background/10 backdrop-blur-sm border-white/20 text-white">
           <CardHeader>
-            <CardTitle className="text-3xl text-white">¡Gracias por votar!</CardTitle>
+            <CardTitle className="text-3xl text-white">¡Gracias por votar {userDisplayName}!</CardTitle>
             <CardDescription className="text-white/80">Tu voto ha sido registrado correctamente.</CardDescription>
           </CardHeader>
           <CardContent>
