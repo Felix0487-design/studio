@@ -7,7 +7,7 @@ import Image from 'next/image';
 
 interface VoteCardProps {
   option: VotingOption;
-  onVote: () => void;
+  onVote: (optionId: string) => void;
   disabled: boolean;
   isSelected: boolean;
 }
@@ -40,7 +40,7 @@ export default function VoteCard({ option, onVote, disabled, isSelected }: VoteC
       </CardContent>
       <CardFooter>
         <Button
-          onClick={onVote}
+          onClick={() => onVote(option.id)}
           disabled={disabled}
           className="w-full transition-colors"
           variant={isSelected ? "default" : "outline"}
