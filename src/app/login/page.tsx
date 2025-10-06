@@ -93,8 +93,8 @@ export default function LoginPage() {
         className="relative flex min-h-screen items-center justify-center bg-cover bg-center p-4"
         style={{ backgroundImage: "url('/login-background.jpg')" }}
       >
-        <div className="absolute inset-0 bg-black/50" />
-        <Card className="relative z-10 w-full max-w-sm shadow-2xl bg-background/10 backdrop-blur-sm border-white/20">
+        <div className="absolute inset-0 bg-black/60" />
+        <Card className="relative z-10 w-full max-w-sm shadow-2xl bg-black/50 border-white/20 text-white">
           <CardContent className="p-8">
             <form onSubmit={handleLogin} className="space-y-6">
               <div className="space-y-2">
