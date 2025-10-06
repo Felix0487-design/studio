@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { USERS } from '@/lib/auth';
 import { votingOptions } from '@/lib/voting';
 import VoteCard from '../vote/VoteCard';
-import VoteResults from '../vote/VoteResults';
 import { Snowflake } from 'lucide-react';
 import Header from '../vote/Header';
 import { useFirebase } from '@/firebase/provider';
@@ -14,6 +13,8 @@ import { doc, setDoc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import ConfirmationDialog from './ConfirmationDialog';
+import type { VotingOption } from '@/lib/voting';
 
 type Vote = {
   optionId: string;
@@ -23,6 +24,9 @@ type Vote = {
 export default function VotingBoothPage() {
   const router = useRouter();
   const { auth, db, user, isLoading, userDisplayName, allVotes, userVote, votesLoading } = useFirebase();
+
+  const [selectedOption, setSelectedOption] = useState<VotingOption | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -38,24 +42,34 @@ export default function VotingBoothPage() {
     }
   }, [allVotes, votesLoading, router, user, userVote]);
 
-  const handleVote = async (optionId: string) => {
-    if (!user || !db || userVote) return;
+  const handleVoteClick = (option: VotingOption) => {
+    if (userVote) return;
+    setSelectedOption(option);
+    setIsDialogOpen(true);
+  };
+
+  const handleConfirmVote = async () => {
+    if (!user || !db || !selectedOption) return;
 
     const voteData: Vote = {
-      optionId: optionId,
+      optionId: selectedOption.id,
       userName: userDisplayName || 'Anónimo',
     };
     
     const voteRef = doc(db, 'votes', user.uid);
-    setDoc(voteRef, voteData)
-      .catch((error) => {
-        const permissionError = new FirestorePermissionError({
-            path: voteRef.path,
-            operation: 'create',
-            requestResourceData: voteData,
-        });
-        errorEmitter.emit('permission-error', permissionError);
-    });
+    try {
+      await setDoc(voteRef, voteData);
+    } catch (error) {
+      const permissionError = new FirestorePermissionError({
+          path: voteRef.path,
+          operation: 'create',
+          requestResourceData: voteData,
+      });
+      errorEmitter.emit('permission-error', permissionError);
+    } finally {
+        setIsDialogOpen(false);
+        setSelectedOption(null);
+    }
   };
 
   const handleLogout = async () => {
@@ -64,19 +78,6 @@ export default function VotingBoothPage() {
       router.push('/login');
     }
   };
-
-  const voteCounts = useMemo(() => {
-    const counts: { [key: string]: number } = {};
-    votingOptions.forEach(opt => counts[opt.id] = 0);
-    allVotes.forEach(v => {
-      if (v.optionId in counts) {
-        counts[v.optionId]++;
-      }
-    });
-    return counts;
-  }, [allVotes]);
-  
-  const totalVotes = allVotes.length;
 
   if (isLoading || votesLoading || !user) {
     return (
@@ -97,9 +98,9 @@ export default function VotingBoothPage() {
         <div className="absolute inset-0 bg-black/70" />
         <div className="relative z-10 container mx-auto">
           <div className="text-center mb-8 md:mb-12 text-white">
-            <h2 className="text-3xl md:text-4xl font-headline mb-2 drop-shadow-md">Emite tu Voto</h2>
+            <h2 className="text-3xl md:text-4xl font-headline mb-2 drop-shadow-md">{userDisplayName} emite tu Voto</h2>
             <p className="text-lg text-white/80">
-              Solo puedes votar una vez. ¡Elige con sabiduría!
+               Solo puedes votar una vez. ¡Elige con sabiduría!
             </p>
           </div>
           
@@ -108,12 +109,22 @@ export default function VotingBoothPage() {
               <VoteCard
                 key={option.id}
                 option={option}
-                onVote={() => handleVote(option.id)}
+                onVote={() => handleVoteClick(option)}
                 disabled={!!userVote}
                 isSelected={userVote?.optionId === option.id}
               />
             ))}
           </div>
+
+          {selectedOption && (
+             <ConfirmationDialog
+                isOpen={isDialogOpen}
+                onOpenChange={setIsDialogOpen}
+                onConfirm={handleConfirmVote}
+                optionName={selectedOption.name}
+             />
+          )}
+
         </div>
       </main>
     </div>

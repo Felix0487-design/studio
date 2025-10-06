@@ -43,7 +43,7 @@ export default function VoteCard({ option, onVote, disabled, isSelected }: VoteC
           onClick={() => onVote(option.id)}
           disabled={disabled}
           className="w-full transition-colors"
-          variant={"default"}
+          variant={isSelected ? "default" : "default"}
         >
           {isSelected ? (
             <>
