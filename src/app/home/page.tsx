@@ -2,18 +2,16 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { USERS, SUPER_USER } from '@/lib/auth';
+import { USERS } from '@/lib/auth';
 import { Snowflake } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useFirebase } from '@/firebase/provider';
 import Header from '../vote/Header';
 import { signOut } from 'firebase/auth';
-import { collection, writeBatch, getDocs } from 'firebase/firestore';
-
 
 export default function HomePage() {
   const router = useRouter();
-  const { auth, db, user, userDisplayName, isLoading, allVotes, votesLoading } = useFirebase();
+  const { auth, user, userDisplayName, isLoading, allVotes, votesLoading } = useFirebase();
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -31,25 +29,6 @@ export default function HomePage() {
         router.push('/login');
     }
   };
-  
-  const handleResetVotes = async () => {
-    if (!db || userDisplayName !== SUPER_USER) {
-      alert("No tienes permiso para realizar esta acción.");
-      return;
-    }
-    
-    const confirmReset = window.confirm("¿Estás seguro de que quieres borrar todos los votos? Esta acción no se puede deshacer.");
-    if (confirmReset) {
-      const votesCollection = collection(db, 'votes');
-      const votesSnapshot = await getDocs(votesCollection);
-      const batch = writeBatch(db);
-      votesSnapshot.forEach(doc => {
-        batch.delete(doc.ref);
-      });
-      await batch.commit();
-      alert("Todos los votos han sido reseteados.");
-    }
-  };
 
   if (isLoading || !user) {
     return (
@@ -61,8 +40,6 @@ export default function HomePage() {
   
   const votesCount = allVotes.length;
   const remainingVotes = USERS.length - votesCount;
-  const isSuperUser = userDisplayName === SUPER_USER;
-
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -106,12 +83,6 @@ export default function HomePage() {
           <Button size="lg" onClick={handleAccess} className="mt-4 animate-pulse">
             Acceder para Votar
           </Button>
-
-           {isSuperUser && (
-            <Button size="sm" variant="destructive" onClick={handleResetVotes} className="mt-8">
-              Resetear Votos (Admin)
-            </Button>
-          )}
         </div>
       </main>
     </div>

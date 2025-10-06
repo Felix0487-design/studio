@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { USERS } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
@@ -137,6 +138,11 @@ export default function LoginPage() {
                 Entrar
               </Button>
             </form>
+             <div className="mt-4 text-center text-xs">
+              <Link href="/admin" className="text-white/50 hover:text-white/80 transition-colors">
+                Admin Panel
+              </Link>
+            </div>
           </CardContent>
         </Card>
       </main>
