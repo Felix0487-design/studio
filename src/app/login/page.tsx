@@ -101,7 +101,7 @@ export default function LoginPage() {
               <div className="space-y-2">
                 <Label htmlFor="user-select" className="text-white">Nombre</Label>
                 <Select value={selectedUser} onValueChange={setSelectedUser}>
-                  <SelectTrigger id="user-select" className="w-full">
+                  <SelectTrigger id="user-select" className="w-full bg-white/90 text-black">
                     <SelectValue placeholder="Selecciona tu nombre" />
                   </SelectTrigger>
                   <SelectContent>
@@ -119,13 +119,14 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="********"
-                  className="pr-10"
+                  className="pr-10 bg-white/90 text-black"
+                  style={{ MozOsxFontSmoothing: 'grayscale', WebkitFontSmoothing: 'antialiased', fontFeatureSettings: "'locl' 1, 'ss01' 1", fontVariant: 'tabular-nums', transform: 'scale(1.2)', letterSpacing: '0.2em' }}
                 />
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="absolute right-1 top-7 h-7 w-7 text-white hover:bg-white/10"
+                  className="absolute right-1 top-7 h-7 w-7 text-gray-500 hover:bg-white/10"
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? <EyeOff /> : <Eye />}
