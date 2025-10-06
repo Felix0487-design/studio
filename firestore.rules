@@ -1,57 +1,78 @@
 /**
- * @fileoverview Firestore Security Rules for Prototyping.
+ * @fileoverview Firestore Security Rules for the prototyping phase.
  *
  * Core Philosophy:
- * This ruleset prioritizes rapid prototyping by focusing on authorization and access control, while relaxing data validation.  It enforces user-based access control for 'votes' to restrict each user to one vote.
+ * This ruleset prioritizes rapid prototyping and development. It enforces a user-ownership model where users can only manage their own data, but it relaxes data validation constraints to allow for schema evolution.
  *
  * Data Structure:
- * The data structure consists of a top-level collection 'votes' where each document represents a vote. Document IDs in 'votes' are expected to match the user's UID, ensuring uniqueness.
+ * All data is stored under the `/votes/{voteId}` collection. The `voteId` MUST match the authenticated user's UID.
  *
  * Key Security Decisions:
- * - Access to 'votes/{voteId}' is restricted to the user whose UID matches the 'voteId'.
- * - The rules explicitly deny any unauthorized access.
+ * - Listing of all votes is explicitly denied.
+ * - Data validation is minimal, focusing on authorization and relationship integrity.
+ * - Only authenticated users can create, update, or delete votes.
  *
  * Denormalization for Authorization:
- * The document ID of the 'votes' collection, which is `{voteId}`, is expected to match the user's UID.
- *
- * Structural Segregation:
- * N/A
+ * The vote document's ID (`voteId`) is used as the owner ID. This avoids needing to add an explicit `ownerId` field in the data and simplifies ownership checks.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Controls access to individual vote documents. Ensures that only the user whose UID matches the voteId can create, read, update, or delete their vote.
+     * @description Controls access to individual vote documents.
      * @path /votes/{voteId}
-     * @allow (create) - Authenticated user with UID 'pmTjxZ4i2fbXua0odmz2ClG3wRk2' can create a vote document with ID 'pmTjxZ4i2fbXua0odmz2ClG3wRk2'.
-     * @allow (get) - Authenticated user with UID 'pmTjxZ4i2fbXua0odmz2ClG3wRk2' can read vote document with ID 'pmTjxZ4i2fbXua0odmz2ClG3wRk2'.
-     * @allow (update) - Authenticated user with UID 'pmTjxZ4i2fbXua0odmz2ClG3wRk2' can update vote document with ID 'pmTjxZ4i2fbXua0odmz2ClG3wRk2'.
-     * @allow (delete) - Authenticated user with UID 'pmTjxZ4i2fbXua0odmz2ClG3wRk2' can delete vote document with ID 'pmTjxZ4i2fbXua0odmz2ClG3wRk2'.
-     * @deny (create) - Authenticated user with UID 'unauthorizedUid' cannot create a vote document with ID 'pmTjxZ4i2fbXua0odmz2ClG3wRk2'.
-     * @deny (get) - Authenticated user with UID 'unauthorizedUid' cannot read vote document with ID 'pmTjxZ4i2fbXua0odmz2ClG3wRk2'.
-     * @deny (update) - Authenticated user with UID 'unauthorizedUid' cannot update vote document with ID 'pmTjxZ4i2fbXua0odmz2ClG3wRk2'.
-     * @deny (delete) - Authenticated user with UID 'unauthorizedUid' cannot delete vote document with ID 'pmTjxZ4i2fbXua0odmz2ClG3wRk2'.
-     * @principle Enforces document ownership for all operations, ensuring only the owner can manage their vote.
+     * @allow (create) User with UID 'user_abc' can create a vote document with ID 'user_abc'.
+     * @deny (create) User with UID 'user_xyz' cannot create a vote document with ID 'user_abc'.
+     * @allow (update) User with UID 'user_abc' can update a vote document with ID 'user_abc'.
+     * @deny (update) User with UID 'user_xyz' cannot update a vote document with ID 'user_abc'.
+     * @allow (delete) User with UID 'user_abc' can delete a vote document with ID 'user_abc'.
+     * @deny (delete) User with UID 'user_xyz' cannot delete a vote document with ID 'user_abc'.
+     * @deny (list) No one can list the votes.
+     * @principle Enforces document ownership for writes.
      */
     match /votes/{voteId} {
-      allow get: if isSignedIn() && isOwner(voteId);
+      // Verifies that the user is signed in.
+      allow get: if isSignedIn();
+      // Listing votes is not allowed.
       allow list: if false;
-      allow create: if isSignedIn() && isOwner(voteId);
-      allow update: if isSignedIn() && isExistingOwner(voteId);
-      allow delete: if isSignedIn() && isExistingOwner(voteId);
+
+      // Allows a user to create a vote if their UID matches the document ID.
+      allow create: if isSignedIn() && request.auth.uid == voteId;
+
+      // Allows a user to update a vote if they own the document and it exists.
+      allow update: if isExistingOwner(voteId);
+
+      // Allows a user to delete a vote if they own the document and it exists.
+      allow delete: if isExistingOwner(voteId);
     }
 
+    // --- Helper functions ---
+
+    /**
+     * @description Checks if the user is signed in.
+     * @return {boolean} True if the user is signed in, false otherwise.
+     */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    function isOwner(voteId) {
-      return request.auth.uid == voteId;
+    /**
+     * @description Checks if the user is the owner of the document.
+     * @param {string} userId The user ID to check against.
+     * @return {boolean} True if the user is the owner, false otherwise.
+     */
+    function isOwner(userId) {
+      return request.auth.uid == userId;
     }
 
-    function isExistingOwner(voteId) {
-        return isOwner(voteId) && resource != null;
+    /**
+     * @description Checks if the user is the owner of the document, and that the document exists.
+     * @param {string} userId The user ID to check against.
+     * @return {boolean} True if the user is the owner and the document exists, false otherwise.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
     }
   }
 }
