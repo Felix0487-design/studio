@@ -15,6 +15,8 @@ import { useFirebase } from '@/firebase/provider';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { doc, getDoc, writeBatch } from 'firebase/firestore';
 import { collection, getDocs } from 'firebase/firestore';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 
 const normalizeString = (str: string) => {
@@ -66,7 +68,15 @@ export default function LoginPage() {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const loggedInUser = userCredential.user;
 
-      const votesSnapshot = await getDocs(collection(db, 'votes'));
+      const votesCol = collection(db, 'votes');
+      const votesSnapshot = await getDocs(votesCol).catch(err => {
+        const permissionError = new FirestorePermissionError({
+            path: votesCol.path,
+            operation: 'list',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        throw err;
+      });
       const allVotesIn = votesSnapshot.size === USERS.length;
       
       if (allVotesIn) {
@@ -75,7 +85,14 @@ export default function LoginPage() {
       }
       
       const userDocRef = doc(db, 'votes', loggedInUser.uid);
-      const userDoc = await getDoc(userDocRef);
+      const userDoc = await getDoc(userDocRef).catch(err => {
+         const permissionError = new FirestorePermissionError({
+            path: userDocRef.path,
+            operation: 'get',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        throw err;
+      });
 
       if (userDoc.exists()) {
          toast({
@@ -88,12 +105,14 @@ export default function LoginPage() {
       }
 
     } catch (error: any) {
-       setError('Credenciales incorrectas. Vuelve a intentarlo.');
-       toast({
-        title: 'Error de acceso',
-        description: 'Usuario o contraseña incorrectos.',
-        variant: 'destructive',
-      });
+       if (error.name !== 'FirestorePermissionError') {
+         setError('Credenciales incorrectas. Vuelve a intentarlo.');
+         toast({
+          title: 'Error de acceso',
+          description: 'Usuario o contraseña incorrectos.',
+          variant: 'destructive',
+        });
+       }
     }
   };
 
@@ -109,7 +128,13 @@ export default function LoginPage() {
   const resetVotes = async () => {
     if (!db) return;
     try {
-        const votesQuery = await getDocs(collection(db, 'votes'));
+        const votesCol = collection(db, 'votes');
+        const votesQuery = await getDocs(votesCol).catch(err => {
+            const permissionError = new FirestorePermissionError({ path: votesCol.path, operation: 'list' });
+            errorEmitter.emit('permission-error', permissionError);
+            throw err;
+        });
+
         if (votesQuery.empty) {
             toast({ title: 'No hay votos para resetear.' });
             return;
@@ -118,17 +143,25 @@ export default function LoginPage() {
         votesQuery.forEach(doc => {
             batch.delete(doc.ref);
         });
-        await batch.commit();
+        
+        batch.commit().catch(err => {
+            const permissionError = new FirestorePermissionError({ path: 'votes', operation: 'delete' });
+            errorEmitter.emit('permission-error', permissionError);
+        });
+
         toast({
             title: 'Votos Reseteados',
             description: 'Todos los registros de votos han sido eliminados.',
         });
-    } catch (error) {
+
+    } catch (error: any) {
+       if (error.name !== 'FirestorePermissionError') {
         toast({
             title: 'Error al resetear',
             description: 'No se pudieron eliminar los votos.',
             variant: 'destructive',
         });
+       }
     }
   };
 

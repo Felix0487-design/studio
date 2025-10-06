@@ -12,6 +12,8 @@ import { signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { USERS } from '@/lib/auth';
 import { collection, getDocs } from 'firebase/firestore';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 export default function VotePage() {
   const router = useRouter();
@@ -26,13 +28,25 @@ export default function VotePage() {
   useEffect(() => {
     const checkVoteStatus = async () => {
         if (user && db) {
-            const votesSnapshot = await getDocs(collection(db, 'votes'));
+            const votesCol = collection(db, 'votes');
+            const votesSnapshot = await getDocs(votesCol).catch(err => {
+                const permissionError = new FirestorePermissionError({ path: votesCol.path, operation: 'list' });
+                errorEmitter.emit('permission-error', permissionError);
+                throw err;
+            });
+
             if (votesSnapshot.size === USERS.length) {
                 router.replace('/results');
                 return;
             }
 
-            const userVoteDoc = await getDoc(doc(db, "votes", user.uid));
+            const userVoteDocRef = doc(db, "votes", user.uid);
+            const userVoteDoc = await getDoc(userVoteDocRef).catch(err => {
+                const permissionError = new FirestorePermissionError({ path: userVoteDocRef.path, operation: 'get' });
+                errorEmitter.emit('permission-error', permissionError);
+                throw err;
+            });
+            
             if (userVoteDoc.exists()) {
                 router.replace('/voting-booth');
             }
