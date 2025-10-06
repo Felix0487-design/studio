@@ -48,7 +48,7 @@ export default function VotePage() {
             });
             
             if (userVoteDoc.exists()) {
-                router.replace('/voting-booth');
+                router.replace('/voted');
             }
         }
     };
