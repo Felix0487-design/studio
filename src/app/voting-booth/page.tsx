@@ -31,10 +31,12 @@ export default function VotingBoothPage() {
   }, [isLoading, user, router]);
 
   useEffect(() => {
-    if (!votesLoading && allVotes.length === USERS.length) {
+    if (!votesLoading && user && userVote) {
+      router.replace('/voted');
+    } else if (!votesLoading && allVotes.length === USERS.length) {
       router.replace('/results');
     }
-  }, [allVotes, votesLoading, router]);
+  }, [allVotes, votesLoading, router, user, userVote]);
 
   const handleVote = async (optionId: string) => {
     if (!user || !db || userVote) return;
@@ -88,32 +90,31 @@ export default function VotingBoothPage() {
     <div className="min-h-screen bg-background text-foreground">
       <Header user={userDisplayName || 'Usuario'} onLogout={handleLogout} backPath="/vote" />
 
-      <main className="container mx-auto p-4 md:p-8">
-        <div className="text-center mb-8 md:mb-12">
-          <h2 className="text-3xl md:text-4xl text-primary mb-2">Emite tu Voto</h2>
-          <p className="text-lg text-foreground/70">
-            {userVote ? '¡Gracias por tu voto!' : 'Solo puedes votar una vez. ¡Elige con sabiduría!'}
-          </p>
+      <main 
+        className="relative min-h-[calc(100vh-65px)] bg-cover bg-center bg-no-repeat p-4 md:p-8"
+        style={{ backgroundImage: "url('/login-background.jpg')" }}
+      >
+        <div className="absolute inset-0 bg-black/70" />
+        <div className="relative z-10 container mx-auto">
+          <div className="text-center mb-8 md:mb-12 text-white">
+            <h2 className="text-3xl md:text-4xl font-headline mb-2 drop-shadow-md">Emite tu Voto</h2>
+            <p className="text-lg text-white/80">
+              Solo puedes votar una vez. ¡Elige con sabiduría!
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-12">
+            {votingOptions.map(option => (
+              <VoteCard
+                key={option.id}
+                option={option}
+                onVote={() => handleVote(option.id)}
+                disabled={!!userVote}
+                isSelected={userVote?.optionId === option.id}
+              />
+            ))}
+          </div>
         </div>
-        
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-12">
-          {votingOptions.map(option => (
-            <VoteCard
-              key={option.id}
-              option={option}
-              onVote={() => handleVote(option.id)}
-              disabled={!!userVote}
-              isSelected={userVote?.optionId === option.id}
-            />
-          ))}
-        </div>
-
-        {userVote && (
-          <section aria-labelledby="results-title">
-            <h3 id="results-title" className="text-2xl text-center text-primary mb-6">Resultados en tiempo real</h3>
-            <VoteResults votes={voteCounts} totalVotes={totalVotes} options={votingOptions} />
-          </section>
-        )}
       </main>
     </div>
   );

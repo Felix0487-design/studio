@@ -18,9 +18,8 @@ export default function VoteCard({ option, onVote, disabled, isSelected }: VoteC
   return (
     <Card className={cn(
       "flex flex-col transition-all duration-300 transform hover:shadow-xl hover:-translate-y-1",
-      isSelected ? "border-primary ring-2 ring-primary shadow-xl" : "shadow-lg",
-      disabled && !isSelected ? "opacity-60 saturate-[.8]" : "",
-      "bg-card overflow-hidden"
+      isSelected ? "border-primary ring-2 ring-primary shadow-xl bg-primary/20" : "shadow-lg border-white/20",
+      "bg-background/10 backdrop-blur-sm text-white overflow-hidden"
     )}>
       {option.imageUrl && (
         <div className="relative w-full h-40">
@@ -34,10 +33,10 @@ export default function VoteCard({ option, onVote, disabled, isSelected }: VoteC
         </div>
       )}
       <CardHeader>
-        <CardTitle className="text-xl text-primary">{option.name}</CardTitle>
+        <CardTitle className="text-xl text-accent">{option.name}</CardTitle>
       </CardHeader>
       <CardContent className="flex-grow">
-        <CardDescription>{option.description}</CardDescription>
+        <CardDescription className="text-white/90">{option.description}</CardDescription>
       </CardContent>
       <CardFooter>
         <Button
@@ -49,7 +48,7 @@ export default function VoteCard({ option, onVote, disabled, isSelected }: VoteC
           {isSelected ? (
             <>
               <CheckCircle2 className="mr-2 h-5 w-5" />
-              Vota
+              Votado
             </>
           ) : (
             `Votar por esta opción`
@@ -59,5 +58,3 @@ export default function VoteCard({ option, onVote, disabled, isSelected }: VoteC
     </Card>
   );
 }
-
-    

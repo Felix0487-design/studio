@@ -85,41 +85,47 @@ export default function ResultsPage() {
     <div className="min-h-screen bg-background text-foreground">
       <Header user={userDisplayName || 'Usuario'} onLogout={handleLogout} />
 
-      <main className="container mx-auto p-4 md:p-8">
-        <div className="text-center mb-8 md:mb-12">
-          <h2 className="text-3xl md:text-4xl text-primary mb-2">¡Votación Cerrada!</h2>
-          <p className="text-lg text-foreground/70">
-            Estos son los resultados finales.
-          </p>
+      <main 
+        className="relative min-h-[calc(100vh-65px)] bg-cover bg-center bg-no-repeat p-4 md:p-8"
+        style={{ backgroundImage: "url('/login-background.jpg')" }}
+      >
+        <div className="absolute inset-0 bg-black/70" />
+        <div className="relative z-10 container mx-auto">
+            <div className="text-center mb-8 md:mb-12 text-white">
+              <h2 className="text-3xl md:text-4xl text-white font-headline mb-2 drop-shadow-md">¡Votación Cerrada!</h2>
+              <p className="text-lg text-white/80">
+                Estos son los resultados finales.
+              </p>
+            </div>
+
+            {winner && (
+              <Card className="max-w-2xl mx-auto mb-12 bg-background/10 backdrop-blur-sm border-white/20 text-white shadow-xl">
+                <CardHeader className="text-center">
+                  <Trophy className="mx-auto h-12 w-12 text-accent" />
+                  <CardTitle className="text-3xl text-accent mt-4">¡Tenemos un Ganador!</CardTitle>
+                </CardHeader>
+                <CardContent className="text-center">
+                  <p className="text-2xl font-bold text-white">{winner.name}</p>
+                  <CardDescription className="mt-2 text-white/80">{winner.description}</CardDescription>
+                </CardContent>
+              </Card>
+            )}
+            
+            {!winner && totalVotes > 0 && (
+               <Card className="max-w-2xl mx-auto mb-12 bg-background/10 backdrop-blur-sm border-white/20 text-white shadow-lg">
+                <CardHeader className="text-center">
+                  <CardTitle className="text-3xl text-white mt-4">¡Hay un Empate!</CardTitle>
+                </CardHeader>
+                <CardContent className="text-center">
+                  <p className="text-lg font-bold text-white/80">Varias opciones han recibido el mismo número de votos. ¡A debatir!</p>
+                </CardContent>
+              </Card>
+            )}
+
+            <section aria-labelledby="results-title">
+              <VoteResults votes={voteCounts} totalVotes={totalVotes} options={votingOptions} />
+            </section>
         </div>
-
-        {winner && (
-          <Card className="max-w-2xl mx-auto mb-12 bg-accent/10 border-accent shadow-xl">
-            <CardHeader className="text-center">
-              <Trophy className="mx-auto h-12 w-12 text-accent" />
-              <CardTitle className="text-3xl text-accent-foreground mt-4">¡Tenemos un Ganador!</CardTitle>
-            </CardHeader>
-            <CardContent className="text-center">
-              <p className="text-2xl font-bold text-primary">{winner.name}</p>
-              <CardDescription className="mt-2 text-foreground/80">{winner.description}</CardDescription>
-            </CardContent>
-          </Card>
-        )}
-        
-        {!winner && totalVotes > 0 && (
-           <Card className="max-w-2xl mx-auto mb-12 bg-secondary/20 border-border shadow-lg">
-            <CardHeader className="text-center">
-              <CardTitle className="text-3xl text-primary mt-4">¡Hay un Empate!</CardTitle>
-            </CardHeader>
-            <CardContent className="text-center">
-              <p className="text-lg font-bold text-foreground/80">Varias opciones han recibido el mismo número de votos. ¡A debatir!</p>
-            </CardContent>
-          </Card>
-        )}
-
-        <section aria-labelledby="results-title">
-          <VoteResults votes={voteCounts} totalVotes={totalVotes} options={votingOptions} />
-        </section>
       </main>
     </div>
   );

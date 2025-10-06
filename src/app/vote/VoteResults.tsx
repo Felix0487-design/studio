@@ -10,9 +10,9 @@ interface VoteResultsProps {
 
 export default function VoteResults({ votes, totalVotes, options }: VoteResultsProps) {
   return (
-    <Card className="max-w-2xl mx-auto shadow-lg">
+    <Card className="max-w-2xl mx-auto shadow-lg bg-background/10 backdrop-blur-sm border-white/20 text-white">
       <CardHeader>
-        <CardTitle className="text-center text-primary">Puntuación Total</CardTitle>
+        <CardTitle className="text-center text-white">Puntuación Total</CardTitle>
       </CardHeader>
       <CardContent className="p-6 space-y-5">
         {options.map(option => {
@@ -21,8 +21,8 @@ export default function VoteResults({ votes, totalVotes, options }: VoteResultsP
           return (
             <div key={option.id}>
               <div className="flex justify-between items-center mb-1 text-sm">
-                <p className="font-medium text-primary">{option.name}</p>
-                <p className="font-mono text-foreground/80">{percentage}% ({voteCount} voto/s)</p>
+                <p className="font-medium text-white">{option.name}</p>
+                <p className="font-mono text-white/80">{percentage}% ({voteCount} voto/s)</p>
               </div>
               <Progress value={percentage} className="h-2" aria-label={`Porcentaje de votos para ${option.name}: ${percentage}%`} />
             </div>
