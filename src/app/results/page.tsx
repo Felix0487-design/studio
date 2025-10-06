@@ -9,10 +9,7 @@ import { Trophy, Snowflake } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import Header from '../vote/Header';
 import { useFirebase } from '@/firebase/provider';
-import { collection, getDocs, onSnapshot } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 
 type Vote = {
   optionId: string;
@@ -21,39 +18,20 @@ type Vote = {
 
 export default function ResultsPage() {
   const router = useRouter();
-  const { auth, db, user, userDisplayName } = useFirebase();
-  const [votes, setVotes] = useState<Vote[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { auth, user, userDisplayName, isLoading, allVotes, votesLoading } = useFirebase();
 
   useEffect(() => {
-    if (!user) {
+    if (!isLoading && !user) {
       router.replace('/login');
       return;
     }
-    if (!db) return;
-
-    const votesCol = collection(db, 'votes');
-    const unsubscribe = onSnapshot(votesCol, async (snapshot) => {
-      // Security check: if somehow a user gets here before voting is complete, redirect them.
-      if (snapshot.size < USERS.length) {
-         router.replace('/vote');
-         return;
-      }
-
-      const votesData = snapshot.docs.map(doc => doc.data() as Vote);
-      setVotes(votesData);
-      setIsLoading(false);
-    }, (error) => {
-      const permissionError = new FirestorePermissionError({
-        path: votesCol.path,
-        operation: 'list',
-      });
-      errorEmitter.emit('permission-error', permissionError);
-      setIsLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [user, db, router]);
+    
+    // Security check: if somehow a user gets here before voting is complete, redirect them.
+    if (!votesLoading && allVotes.length < USERS.length) {
+        router.replace('/vote');
+        return;
+    }
+  }, [user, isLoading, allVotes, votesLoading, router]);
   
   const handleLogout = async () => {
     if (auth) {
@@ -63,10 +41,10 @@ export default function ResultsPage() {
   };
 
   const { voteCounts, totalVotes, winner } = useMemo(() => {
-    const counts: { [key: string]: number } = {};
+    const counts: { [key:string]: number } = {};
     votingOptions.forEach(opt => counts[opt.id] = 0);
     
-    votes.forEach(vote => {
+    allVotes.forEach(vote => {
       if (vote.optionId in counts) {
         counts[vote.optionId]++;
       }
@@ -90,12 +68,12 @@ export default function ResultsPage() {
 
     return { 
       voteCounts: counts, 
-      totalVotes: votes.length,
+      totalVotes: allVotes.length,
       winner: winnerOption,
     };
-  }, [votes]);
+  }, [allVotes]);
 
-  if (isLoading || !user) {
+  if (isLoading || votesLoading || !user) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Snowflake className="h-16 w-16 animate-spin text-primary" />

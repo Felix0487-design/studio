@@ -1,22 +1,18 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFirebase } from '@/firebase/provider';
 import { USERS } from '@/lib/auth';
-import { collection, onSnapshot } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import Header from '../vote/Header';
 import { Snowflake } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 
 export default function VotedPage() {
   const router = useRouter();
-  const { auth, user, userDisplayName, isLoading, db } = useFirebase();
-  const [votesCount, setVotesCount] = useState(0);
-  const [isVotesLoading, setIsVotesLoading] = useState(true);
+  const { auth, user, userDisplayName, isLoading, allVotes, votesLoading } = useFirebase();
+  const votesCount = allVotes.length;
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -25,26 +21,10 @@ export default function VotedPage() {
   }, [isLoading, user, router]);
 
   useEffect(() => {
-    if (!db) return;
-
-    const votesCol = collection(db, 'votes');
-    const unsubscribe = onSnapshot(votesCol, (snapshot) => {
-      setVotesCount(snapshot.size);
-      setIsVotesLoading(false);
-      if (snapshot.size === USERS.length) {
+    if (!votesLoading && votesCount === USERS.length) {
         router.replace('/results');
-      }
-    }, (error) => {
-      const permissionError = new FirestorePermissionError({
-        path: votesCol.path,
-        operation: 'list',
-      });
-      errorEmitter.emit('permission-error', permissionError);
-      setIsVotesLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [db, router]);
+    }
+  }, [votesCount, votesLoading, router]);
 
   const handleLogout = async () => {
     if (auth) {
@@ -53,7 +33,7 @@ export default function VotedPage() {
     }
   };
   
-  if (isLoading || isVotesLoading || !user) {
+  if (isLoading || votesLoading || !user) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Snowflake className="h-16 w-16 animate-spin text-primary" />

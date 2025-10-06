@@ -17,11 +17,21 @@ import {
 import {
   getFirestore,
   Firestore,
+  collection,
+  onSnapshot,
+  doc,
 } from 'firebase/firestore';
 
 import {firebaseConfig} from './config';
 import { USERS } from '@/lib/auth';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
+import { errorEmitter } from './error-emitter';
+import { FirestorePermissionError } from './errors';
+
+type Vote = {
+  optionId: string;
+  userName: string;
+};
 
 /**
  * `FirebaseContext` providers access to the Firebase app instance
@@ -36,6 +46,9 @@ const FirebaseContext = createContext<
       userDisplayName: string | null;
       isLoading: boolean;
       isUserLoading: boolean;
+      allVotes: Vote[];
+      userVote: Vote | null;
+      votesLoading: boolean;
     }
   | undefined
 >(undefined);
@@ -56,6 +69,11 @@ export const FirebaseProvider = ({children}: {children: ReactNode}) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isUserLoading, setIsUserLoading] = useState(true);
 
+  // Voting state
+  const [allVotes, setAllVotes] = useState<Vote[]>([]);
+  const [userVote, setUserVote] = useState<Vote | null>(null);
+  const [votesLoading, setVotesLoading] = useState(true);
+
   useEffect(() => {
     let app;
     if (!getApps().length) {
@@ -72,12 +90,12 @@ export const FirebaseProvider = ({children}: {children: ReactNode}) => {
     setDb(dbInstance);
     setIsLoading(false);
 
-    const unsubscribe = onAuthStateChanged(authInstance, (user) => {
+    const unsubscribeAuth = onAuthStateChanged(authInstance, (user) => {
       setUser(user);
       if (user && user.email) {
         const nameFromEmail = user.email.split('@')[0];
         const matchingUser = USERS.find(u => 
-            u.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() === nameFromEmail
+            u.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s/g, '') === nameFromEmail
         );
         setUserDisplayName(matchingUser || nameFromEmail);
       } else {
@@ -86,8 +104,46 @@ export const FirebaseProvider = ({children}: {children: ReactNode}) => {
       setIsUserLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => unsubscribeAuth();
   }, []);
+
+  useEffect(() => {
+    if (!db || !user) {
+        setAllVotes([]);
+        setUserVote(null);
+        setVotesLoading(!db);
+        return;
+    };
+
+    setVotesLoading(true);
+
+    const votesCol = collection(db, 'votes');
+    const unsubscribeAllVotes = onSnapshot(votesCol, (snapshot) => {
+      const votesData = snapshot.docs.map(doc => doc.data() as Vote);
+      setAllVotes(votesData);
+      setVotesLoading(false);
+    }, (error) => {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: votesCol.path, operation: 'list' }));
+      setVotesLoading(false);
+    });
+
+    const userVoteDoc = doc(db, 'votes', user.uid);
+    const unsubscribeUserVote = onSnapshot(userVoteDoc, (doc) => {
+      if (doc.exists()) {
+        setUserVote(doc.data() as Vote);
+      } else {
+        setUserVote(null);
+      }
+    }, (error) => {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: userVoteDoc.path, operation: 'get' }));
+    });
+    
+    return () => {
+        unsubscribeAllVotes();
+        unsubscribeUserVote();
+    };
+
+  }, [db, user]);
 
   return (
     <FirebaseContext.Provider
@@ -99,6 +155,9 @@ export const FirebaseProvider = ({children}: {children: ReactNode}) => {
         userDisplayName,
         isLoading,
         isUserLoading,
+        allVotes,
+        userVote,
+        votesLoading,
       }}
     >
       <FirebaseErrorListener />

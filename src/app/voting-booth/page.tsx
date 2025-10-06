@@ -9,7 +9,7 @@ import VoteResults from '../vote/VoteResults';
 import { Snowflake } from 'lucide-react';
 import Header from '../vote/Header';
 import { useFirebase } from '@/firebase/provider';
-import { collection, doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -21,10 +21,7 @@ type Vote = {
 
 export default function VotingBoothPage() {
   const router = useRouter();
-  const { auth, db, user, isLoading, userDisplayName } = useFirebase();
-
-  const [allVotes, setAllVotes] = useState<Vote[]>([]);
-  const [userVote, setUserVote] = useState<Vote | null>(null);
+  const { auth, db, user, isLoading, userDisplayName, allVotes, userVote, votesLoading } = useFirebase();
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -33,47 +30,10 @@ export default function VotingBoothPage() {
   }, [isLoading, user, router]);
 
   useEffect(() => {
-    if (!db || !user) return;
-
-    // Listen for all votes
-    const votesCol = collection(db, 'votes');
-    const unsubscribeAll = onSnapshot(votesCol, (snapshot) => {
-      const votesData = snapshot.docs.map(doc => doc.data() as Vote);
-      setAllVotes(votesData);
-
-      if (votesData.length === USERS.length) {
-        router.replace('/results');
-      }
-    }, (error) => {
-      const permissionError = new FirestorePermissionError({
-        path: votesCol.path,
-        operation: 'list',
-      });
-      errorEmitter.emit('permission-error', permissionError);
-    });
-
-    // Listen for the current user's vote
-    const userVoteDoc = doc(db, 'votes', user.uid);
-    const unsubscribeUser = onSnapshot(userVoteDoc, (doc) => {
-      if (doc.exists()) {
-        setUserVote(doc.data() as Vote);
-      } else {
-        setUserVote(null);
-      }
-    }, (error) => {
-       const permissionError = new FirestorePermissionError({
-        path: userVoteDoc.path,
-        operation: 'get',
-      });
-      errorEmitter.emit('permission-error', permissionError);
-    });
-
-    return () => {
-      unsubscribeAll();
-      unsubscribeUser();
-    };
-  }, [db, user, router]);
-
+    if (!votesLoading && allVotes.length === USERS.length) {
+      router.replace('/results');
+    }
+  }, [allVotes, votesLoading, router]);
 
   const handleVote = async (optionId: string) => {
     if (!user || !db || userVote) return;
@@ -115,7 +75,7 @@ export default function VotingBoothPage() {
   
   const totalVotes = allVotes.length;
 
-  if (isLoading || !user) {
+  if (isLoading || !user || votesLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Snowflake className="h-16 w-16 animate-spin text-primary" />

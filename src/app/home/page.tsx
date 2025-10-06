@@ -5,51 +5,24 @@ import { useRouter } from 'next/navigation';
 import { USERS } from '@/lib/auth';
 import { Snowflake } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { collection, onSnapshot } from 'firebase/firestore';
 import { useFirebase } from '@/firebase/provider';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 
 
 export default function HomePage() {
   const router = useRouter();
-  const { db } = useFirebase();
-  const [votesCount, setVotesCount] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    if (!db) {
-      // Firebase not initialized yet
-      return;
-    }
-    setIsLoading(true);
-    const votesCol = collection(db, 'votes');
-    const unsubscribe = onSnapshot(votesCol, (snapshot) => {
-      setVotesCount(snapshot.size);
-      setIsLoading(false);
-    }, (error) => {
-      const permissionError = new FirestorePermissionError({
-        path: votesCol.path,
-        operation: 'list',
-      });
-      errorEmitter.emit('permission-error', permissionError);
-      setIsLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [db]);
-
+  const { allVotes, votesLoading } = useFirebase();
 
   const handleAccess = () => {
     router.push('/login');
   };
 
+  const votesCount = allVotes.length;
   const remainingVotes = USERS.length - votesCount;
 
   return (
     <main
       className="relative min-h-screen bg-cover bg-center bg-no-repeat p-8 text-white"
-      style={{ backgroundImage: "url('/login-background.jpg')" }}
+      style={{ backgroundImage: "url('/home-background.jpg')" }}
     >
       <div className="absolute inset-0 bg-black/60" />
       <div className="relative z-10 mx-auto flex h-full max-w-4xl flex-col items-center justify-center text-center">
@@ -71,7 +44,7 @@ export default function HomePage() {
           </p>
         </div>
 
-        {!isLoading && (
+        {!votesLoading && (
             <div className="my-8 rounded-lg bg-primary/80 px-8 py-4 text-center backdrop-blur-sm">
             <h3 className="text-2xl font-bold text-white">Estado de la Votación</h3>
             <p className="text-lg text-primary-foreground">

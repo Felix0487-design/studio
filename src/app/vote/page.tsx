@@ -9,15 +9,11 @@ import Header from './Header';
 import { ExternalLink } from 'lucide-react';
 import { useFirebase } from '@/firebase/provider';
 import { signOut } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
 import { USERS } from '@/lib/auth';
-import { collection, getDocs } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 
 export default function VotePage() {
   const router = useRouter();
-  const { auth, user, userDisplayName, isLoading, db } = useFirebase();
+  const { auth, user, userDisplayName, isLoading, allVotes, userVote, votesLoading } = useFirebase();
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -26,31 +22,14 @@ export default function VotePage() {
   }, [isLoading, user, router]);
 
   useEffect(() => {
-    const checkVoteStatus = async () => {
-        if (user && db) {
-            try {
-              const votesCol = collection(db, 'votes');
-              const votesSnapshot = await getDocs(votesCol);
-
-              if (votesSnapshot.size === USERS.length) {
-                  router.replace('/results');
-                  return;
-              }
-
-              const userVoteDocRef = doc(db, "votes", user.uid);
-              const userVoteDoc = await getDoc(userVoteDocRef);
-              
-              if (userVoteDoc.exists()) {
-                  router.replace('/voted');
-              }
-            } catch (err) {
-               const permissionError = new FirestorePermissionError({ path: 'votes', operation: 'list' });
-               errorEmitter.emit('permission-error', permissionError);
-            }
+    if (!votesLoading && user) {
+        if (allVotes.length === USERS.length) {
+            router.replace('/results');
+        } else if (userVote) {
+            router.replace('/voted');
         }
-    };
-    checkVoteStatus();
-  }, [user, db, router]);
+    }
+  }, [allVotes, userVote, votesLoading, user, router]);
 
   const handleLogout = async () => {
     if(auth) {
@@ -63,7 +42,7 @@ export default function VotePage() {
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
-  if (isLoading || !user) {
+  if (isLoading || !user || votesLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Snowflake className="h-16 w-16 animate-spin text-primary" />
