@@ -70,12 +70,11 @@ export default function LoginPage() {
       await signInWithEmailAndPassword(auth, email, password);
       router.push('/vote');
     } catch (error: any) {
-      console.error("Login failed:", error);
        if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
         setError('Credenciales incorrectas. Vuelve a intentarlo.');
         toast({
           title: 'Error de acceso',
-          description: 'Usuario o contraseña incorrectos. Revisa que el usuario esté creado y la contraseña sea "navidad2025".',
+          description: 'Usuario o contraseña incorrectos. La contraseña para todos es "navidad2025".',
           variant: 'destructive',
         });
        } else {
@@ -256,3 +255,5 @@ export default function LoginPage() {
     </>
   );
 }
+
+    
