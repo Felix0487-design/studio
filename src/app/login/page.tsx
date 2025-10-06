@@ -16,6 +16,15 @@ import { Snowflake } from 'lucide-react';
 import { getFirestore, writeBatch, collection, getDocs } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 
+// Función para normalizar el email eliminando tildes
+const normalizeEmail = (name: string) => {
+  const normalized = name
+    .toLowerCase()
+    .normalize("NFD") // Descompone caracteres en su forma base y diacríticos
+    .replace(/[\u0300-\u036f]/g, ""); // Elimina los diacríticos (tildes, etc.)
+  return `${normalized.replace(/\s/g, '')}@navidad-votes.com`;
+};
+
 export default function LoginPage() {
   const [selectedUser, setSelectedUser] = useState('');
   const [password, setPassword] = useState('');
@@ -45,8 +54,7 @@ export default function LoginPage() {
       return;
     }
     try {
-      // Map username to an email format
-      const email = `${selectedUser.toLowerCase().replace(/\s/g, '')}@navidad-votes.com`;
+      const email = normalizeEmail(selectedUser);
       await signInWithEmailAndPassword(auth, email, password);
       router.push('/vote');
     } catch (error) {
