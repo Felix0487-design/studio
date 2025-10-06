@@ -1,0 +1,36 @@
+{
+  "entities": {
+    "vote": {
+      "title": "Vote",
+      "description": "Represents a single vote cast by a user for a specific option.",
+      "type": "object",
+      "properties": {
+        "optionId": {
+          "type": "string",
+          "description": "The ID of the voting option selected."
+        },
+        "userName": {
+          "type": "string",
+          "description": "The name of the user who cast the vote."
+        }
+      },
+      "required": [
+        "optionId",
+        "userName"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "email-password"
+    ]
+  },
+  "firestore": {
+    "/votes/{voteId}": {
+      "schema": {
+        "$ref": "#/entities/vote"
+      },
+      "description": "Stores individual votes from users. The document ID is the user's UID to ensure one vote per user."
+    }
+  }
+}
