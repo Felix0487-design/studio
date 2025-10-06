@@ -34,8 +34,10 @@ export default function ResultsPage() {
 
     const votesCol = collection(db, 'votes');
     const unsubscribe = onSnapshot(votesCol, async (snapshot) => {
+      // Security check: if somehow a user gets here before voting is complete, redirect them.
       if (snapshot.size < USERS.length) {
-         // router.replace('/vote');
+         router.replace('/vote');
+         return;
       }
 
       const votesData = snapshot.docs.map(doc => doc.data() as Vote);

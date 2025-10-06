@@ -28,27 +28,24 @@ export default function VotePage() {
   useEffect(() => {
     const checkVoteStatus = async () => {
         if (user && db) {
-            const votesCol = collection(db, 'votes');
-            const votesSnapshot = await getDocs(votesCol).catch(err => {
-                const permissionError = new FirestorePermissionError({ path: votesCol.path, operation: 'list' });
-                errorEmitter.emit('permission-error', permissionError);
-                throw err;
-            });
+            try {
+              const votesCol = collection(db, 'votes');
+              const votesSnapshot = await getDocs(votesCol);
 
-            if (votesSnapshot.size === USERS.length) {
-                router.replace('/results');
-                return;
-            }
+              if (votesSnapshot.size === USERS.length) {
+                  router.replace('/results');
+                  return;
+              }
 
-            const userVoteDocRef = doc(db, "votes", user.uid);
-            const userVoteDoc = await getDoc(userVoteDocRef).catch(err => {
-                const permissionError = new FirestorePermissionError({ path: userVoteDocRef.path, operation: 'get' });
-                errorEmitter.emit('permission-error', permissionError);
-                throw err;
-            });
-            
-            if (userVoteDoc.exists()) {
-                router.replace('/voted');
+              const userVoteDocRef = doc(db, "votes", user.uid);
+              const userVoteDoc = await getDoc(userVoteDocRef);
+              
+              if (userVoteDoc.exists()) {
+                  router.replace('/voted');
+              }
+            } catch (err) {
+               const permissionError = new FirestorePermissionError({ path: 'votes', operation: 'list' });
+               errorEmitter.emit('permission-error', permissionError);
             }
         }
     };
