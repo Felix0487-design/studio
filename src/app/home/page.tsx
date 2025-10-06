@@ -2,34 +2,43 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { USERS, getVotes } from '@/lib/auth';
+import { USERS } from '@/lib/auth';
+import { getVotes } from '@/lib/auth'; // Placeholder, will be replaced by firestore logic
 import { Snowflake } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { collection, onSnapshot } from 'firebase/firestore';
+import { useFirebase } from '@/firebase/provider';
+
 
 export default function HomePage() {
   const router = useRouter();
-  const [votes, setVotes] = useState<string[]>([]);
+  const { db } = useFirebase();
+  const [votesCount, setVotesCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const storedVotes = getVotes();
-    setVotes(Object.keys(storedVotes));
-    setIsLoading(false);
-  }, []);
+    if (!db) {
+      // Firebase not initialized yet
+      return;
+    }
+    setIsLoading(true);
+    const votesCol = collection(db, 'votes');
+    const unsubscribe = onSnapshot(votesCol, (snapshot) => {
+      setVotesCount(snapshot.size);
+      setIsLoading(false);
+    }, (error) => {
+      console.error("Error fetching vote count:", error);
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [db]);
+
 
   const handleAccess = () => {
     router.push('/login');
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-background">
-        <Snowflake className="h-16 w-16 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  const votesCount = votes.length;
   const remainingVotes = USERS.length - votesCount;
 
   return (
@@ -57,15 +66,17 @@ export default function HomePage() {
           </p>
         </div>
 
-        <div className="my-8 rounded-lg bg-primary/80 px-8 py-4 text-center backdrop-blur-sm">
-          <h3 className="text-2xl font-bold text-white">Estado de la Votación</h3>
-          <p className="text-lg text-primary-foreground">
-            Votos emitidos: <span className="font-extrabold">{votesCount}</span> de {USERS.length}
-          </p>
-          <p className="text-lg text-primary-foreground">
-            Faltan por votar: <span className="font-extrabold">{remainingVotes}</span>
-          </p>
-        </div>
+        {!isLoading && (
+            <div className="my-8 rounded-lg bg-primary/80 px-8 py-4 text-center backdrop-blur-sm">
+            <h3 className="text-2xl font-bold text-white">Estado de la Votación</h3>
+            <p className="text-lg text-primary-foreground">
+                Votos emitidos: <span className="font-extrabold">{votesCount}</span> de {USERS.length}
+            </p>
+            <p className="text-lg text-primary-foreground">
+                Faltan por votar: <span className="font-extrabold">{remainingVotes > 0 ? remainingVotes : 0}</span>
+            </p>
+            </div>
+        )}
 
         <Button size="lg" onClick={handleAccess} className="mt-4 animate-pulse">
           Acceder para Votar

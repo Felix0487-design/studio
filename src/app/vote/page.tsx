@@ -3,30 +3,49 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { ThumbsUp } from 'lucide-react';
+import { ThumbsUp, Snowflake } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { getCurrentUser, logoutUser } from '@/lib/auth';
 import Header from './Header';
 import { ExternalLink } from 'lucide-react';
+import { useFirebase } from '@/firebase/provider';
+import { signOut } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { USERS } from '@/lib/auth';
+import { collection, getDocs } from 'firebase/firestore';
 
 export default function VotePage() {
-  const [user, setUser] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const { auth, user, userDisplayName, isLoading, db } = useFirebase();
 
   useEffect(() => {
-    const currentUser = getCurrentUser();
-    if (!currentUser) {
+    if (!isLoading && !user) {
       router.replace('/login');
-    } else {
-      setUser(currentUser);
-      setIsLoading(false);
     }
-  }, [router]);
+  }, [isLoading, user, router]);
 
-  const handleLogout = () => {
-    logoutUser();
-    router.push('/login');
+  useEffect(() => {
+    const checkVoteStatus = async () => {
+        if (user && db) {
+            const votesSnapshot = await getDocs(collection(db, 'votes'));
+            if (votesSnapshot.size === USERS.length) {
+                router.replace('/results');
+                return;
+            }
+
+            const userVoteDoc = await getDoc(doc(db, "votes", user.uid));
+            if (userVoteDoc.exists()) {
+                router.replace('/voting-booth');
+            }
+        }
+    };
+    checkVoteStatus();
+  }, [user, db, router]);
+
+  const handleLogout = async () => {
+    if(auth) {
+        await signOut(auth);
+        router.push('/login');
+    }
   };
 
   const openLink = (url: string) => {
@@ -36,14 +55,14 @@ export default function VotePage() {
   if (isLoading || !user) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
-        <div className="h-16 w-16 animate-spin rounded-full border-4 border-dashed border-primary"></div>
+        <Snowflake className="h-16 w-16 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Header user={user} onLogout={handleLogout} />
+      <Header user={userDisplayName || 'Usuario'} onLogout={handleLogout} />
 
       <main className="container mx-auto p-4 md:p-8">
         <div className="text-center mb-8 md:mb-12">

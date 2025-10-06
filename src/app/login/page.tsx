@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { USERS, SUPER_SECRET_PASSWORD, SUPER_USER, SUPER_USER_PASSWORD, getVotes, resetVotes, getCurrentUser, setCurrentUser, logoutUser } from '@/lib/auth';
+import { USERS, SUPER_USER_PASSWORD, SUPER_USER } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Snowflake } from 'lucide-react';
+import { useFirebase } from '@/firebase/provider';
+import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { doc, getDoc, writeBatch } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
+
+
+const normalizeString = (str: string) => {
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/\s/g, '');
+};
 
 export default function LoginPage() {
   const [selectedUser, setSelectedUser] = useState('');
@@ -18,29 +31,21 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const router = useRouter();
   const { toast } = useToast();
+  const { auth, db, user } = useFirebase();
 
   const [isLoading, setIsLoading] = useState(true);
   const [snowflakeClicks, setSnowflakeClicks] = useState(0);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [adminUser, setAdminUser] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
-  const [votes, setVotes] = useState<Record<string, string>>({});
   
   useEffect(() => {
-    const user = getCurrentUser();
-    const storedVotes = getVotes();
-    setVotes(storedVotes);
-    
     if (user) {
-      if (Object.keys(storedVotes).length === USERS.length) {
-        router.replace('/results');
-      } else {
-        router.replace('/vote');
-      }
+      router.replace('/vote');
     } else {
       setIsLoading(false);
     }
-  }, [router]);
+  }, [user, router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,31 +56,41 @@ export default function LoginPage() {
       return;
     }
 
-    if (password !== SUPER_SECRET_PASSWORD) {
-      setError('Credenciales incorrectas. Vuelve a intentarlo.');
-      toast({
+    if (!auth) {
+        setError('Servicio de autenticación no disponible. Inténtalo de nuevo más tarde.');
+        return;
+    }
+
+    try {
+      const email = `${normalizeString(selectedUser)}@navidad-votes.com`;
+      await signInWithEmailAndPassword(auth, email, password);
+
+      const userDocRef = doc(db, 'votes', auth.currentUser!.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      const votesSnapshot = await getDocs(collection(db, 'votes'));
+      const allVotesIn = votesSnapshot.size === USERS.length;
+
+      if (allVotesIn) {
+        router.push('/results');
+      } else if (userDoc.exists()) {
+         toast({
+          title: 'Ya has votado',
+          description: 'Serás redirigido a la página de votación para ver los resultados parciales.',
+        });
+        router.push('/voting-booth');
+      }
+      else {
+        router.push('/vote');
+      }
+
+    } catch (error: any) {
+       setError('Credenciales incorrectas. Vuelve a intentarlo.');
+       toast({
         title: 'Error de acceso',
-        description: 'Contraseña incorrecta.',
+        description: 'Usuario o contraseña incorrectos.',
         variant: 'destructive',
       });
-      return;
-    }
-
-    // Check if user has already voted
-    if (votes[selectedUser]) {
-      toast({
-        title: 'Ya has votado',
-        description: 'Ya has emitido tu voto anteriormente. Serás redirigido a la página de votación.',
-        variant: 'default',
-      });
-    }
-
-    setCurrentUser(selectedUser);
-    
-    if (Object.keys(getVotes()).length === USERS.length) {
-        router.push('/results');
-    } else {
-        router.push('/vote');
     }
   };
 
@@ -88,18 +103,43 @@ export default function LoginPage() {
     }
   };
 
+  const resetVotes = async () => {
+    if (!db) return;
+    try {
+        const votesQuery = await getDocs(collection(db, 'votes'));
+        if (votesQuery.empty) {
+            toast({ title: 'No hay votos para resetear.' });
+            return;
+        }
+        const batch = writeBatch(db);
+        votesQuery.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+        await batch.commit();
+        toast({
+            title: 'Votos Reseteados',
+            description: 'Todos los registros de votos han sido eliminados.',
+        });
+    } catch (error) {
+        toast({
+            title: 'Error al resetear',
+            description: 'No se pudieron eliminar los votos.',
+            variant: 'destructive',
+        });
+    }
+  };
+
+
   const handleAdminLogin = async () => {
     if (adminUser === SUPER_USER && adminPassword === SUPER_USER_PASSWORD) {
-      resetVotes();
-      logoutUser(); // Log out current user if any
-      toast({
-        title: 'Votos Reseteados',
-        description: 'Todos los registros de votos han sido eliminados.',
-      });
+      await resetVotes();
+      if (auth && auth.currentUser) {
+          await signOut(auth);
+      }
       setShowAdminLogin(false);
       setAdminUser('');
       setAdminPassword('');
-      router.refresh(); // Refresh page to reflect changes
+      router.refresh(); 
     } else {
       toast({
         title: 'Acceso de Administrador Fallido',
@@ -109,7 +149,7 @@ export default function LoginPage() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || user) {
      return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Snowflake className="h-16 w-16 animate-spin text-primary" />

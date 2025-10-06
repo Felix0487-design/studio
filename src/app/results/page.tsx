@@ -2,41 +2,55 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { getVotes, getCurrentUser, logoutUser, USERS } from '@/lib/auth';
-import { votingOptions, type VotingOption } from '@/lib/voting';
+import { USERS } from '@/lib/auth';
+import { votingOptions } from '@/lib/voting';
 import VoteResults from '../vote/VoteResults';
-import { Button } from '@/components/ui/button';
 import { Trophy, Snowflake } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import Header from '../vote/Header';
+import { useFirebase } from '@/firebase/provider';
+import { collection, getDocs, onSnapshot } from 'firebase/firestore';
+import { signOut } from 'firebase/auth';
+
+type Vote = {
+  optionId: string;
+  userName: string;
+};
 
 export default function ResultsPage() {
-  const [user, setUser] = useState<string | null>(null);
-  const [votes, setVotes] = useState<Record<string, string>>({});
-  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const { auth, db, user, userDisplayName } = useFirebase();
+  const [votes, setVotes] = useState<Vote[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const currentUser = getCurrentUser();
-    if (!currentUser) {
+    if (!user) {
       router.replace('/login');
       return;
     }
-    
-    const storedVotes = getVotes();
-    // Only allow access if all votes are in
-    if (Object.keys(storedVotes).length < USERS.length) {
-      router.replace('/vote');
-      return;
-    }
+    if (!db) return;
 
-    setUser(currentUser);
-    setVotes(storedVotes);
-    setIsLoading(false);
-  }, [router]);
+    const votesCol = collection(db, 'votes');
+    const unsubscribe = onSnapshot(votesCol, async (snapshot) => {
+      if (snapshot.size < USERS.length) {
+         // router.replace('/vote');
+      }
+
+      const votesData = snapshot.docs.map(doc => doc.data() as Vote);
+      setVotes(votesData);
+      setIsLoading(false);
+    }, (error) => {
+      console.error("Error fetching votes:", error);
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [user, db, router]);
   
-  const handleLogout = () => {
-    logoutUser();
+  const handleLogout = async () => {
+    if (auth) {
+      await signOut(auth);
+    }
     router.push('/login');
   };
 
@@ -44,27 +58,31 @@ export default function ResultsPage() {
     const counts: { [key: string]: number } = {};
     votingOptions.forEach(opt => counts[opt.id] = 0);
     
-    for (const voter in votes) {
-      const optionId = votes[voter];
-      if (optionId in counts) {
-        counts[optionId]++;
+    votes.forEach(vote => {
+      if (vote.optionId in counts) {
+        counts[vote.optionId]++;
       }
-    }
+    });
 
     let maxVotes = 0;
     let winnerId: string | null = null;
+    let isTie = false;
+    
     for (const optionId in counts) {
       if (counts[optionId] > maxVotes) {
         maxVotes = counts[optionId];
         winnerId = optionId;
+        isTie = false;
+      } else if (counts[optionId] === maxVotes && maxVotes > 0) {
+        isTie = true;
       }
     }
     
-    const winnerOption = winnerId ? votingOptions.find(opt => opt.id === winnerId) : null;
+    const winnerOption = !isTie && winnerId ? votingOptions.find(opt => opt.id === winnerId) : null;
 
     return { 
       voteCounts: counts, 
-      totalVotes: Object.keys(votes).length,
+      totalVotes: votes.length,
       winner: winnerOption,
     };
   }, [votes]);
@@ -79,7 +97,7 @@ export default function ResultsPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Header user={user} onLogout={handleLogout} />
+      <Header user={userDisplayName || 'Usuario'} onLogout={handleLogout} />
 
       <main className="container mx-auto p-4 md:p-8">
         <div className="text-center mb-8 md:mb-12">
@@ -98,6 +116,17 @@ export default function ResultsPage() {
             <CardContent className="text-center">
               <p className="text-2xl font-bold text-primary">{winner.name}</p>
               <CardDescription className="mt-2 text-foreground/80">{winner.description}</CardDescription>
+            </CardContent>
+          </Card>
+        )}
+        
+        {!winner && totalVotes > 0 && (
+           <Card className="max-w-2xl mx-auto mb-12 bg-secondary/20 border-border shadow-lg">
+            <CardHeader className="text-center">
+              <CardTitle className="text-3xl text-primary mt-4">¡Hay un Empate!</CardTitle>
+            </CardHeader>
+            <CardContent className="text-center">
+              <p className="text-lg font-bold text-foreground/80">Varias opciones han recibido el mismo número de votos. ¡A debatir!</p>
             </CardContent>
           </Card>
         )}

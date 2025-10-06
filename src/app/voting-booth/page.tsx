@@ -2,69 +2,97 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { USERS, getCurrentUser, logoutUser, getVotes, saveVote } from '@/lib/auth';
+import { USERS } from '@/lib/auth';
 import { votingOptions } from '@/lib/voting';
 import VoteCard from '../vote/VoteCard';
 import VoteResults from '../vote/VoteResults';
-import { Button } from '@/components/ui/button';
 import { Snowflake } from 'lucide-react';
 import Header from '../vote/Header';
+import { useFirebase } from '@/firebase/provider';
+import { collection, doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { signOut } from 'firebase/auth';
+
+type Vote = {
+  optionId: string;
+  userName: string;
+};
 
 export default function VotingBoothPage() {
-  const [user, setUser] = useState<string | null>(null);
-  const [votes, setVotes] = useState<Record<string, string>>({});
-  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const { auth, db, user, isLoading, userDisplayName } = useFirebase();
+
+  const [allVotes, setAllVotes] = useState<Vote[]>([]);
+  const [userVote, setUserVote] = useState<Vote | null>(null);
 
   useEffect(() => {
-    const currentUser = getCurrentUser();
-    if (!currentUser) {
+    if (!isLoading && !user) {
       router.replace('/login');
-      return;
     }
+  }, [isLoading, user, router]);
 
-    setUser(currentUser);
-    const storedVotes = getVotes();
-    setVotes(storedVotes);
+  useEffect(() => {
+    if (!db || !user) return;
+
+    // Listen for all votes
+    const votesCol = collection(db, 'votes');
+    const unsubscribeAll = onSnapshot(votesCol, (snapshot) => {
+      const votesData = snapshot.docs.map(doc => doc.data() as Vote);
+      setAllVotes(votesData);
+
+      if (votesData.length === USERS.length) {
+        router.replace('/results');
+      }
+    });
+
+    // Listen for the current user's vote
+    const userVoteDoc = doc(db, 'votes', user.uid);
+    const unsubscribeUser = onSnapshot(userVoteDoc, (doc) => {
+      if (doc.exists()) {
+        setUserVote(doc.data() as Vote);
+      }
+    });
+
+    return () => {
+      unsubscribeAll();
+      unsubscribeUser();
+    };
+  }, [db, user, router]);
+
+
+  const handleVote = async (optionId: string) => {
+    if (!user || !db || userVote) return;
+
+    const voteData: Vote = {
+      optionId: optionId,
+      userName: userDisplayName || 'Anónimo',
+    };
     
-    if (Object.keys(storedVotes).length === USERS.length) {
-      router.replace('/results');
-    } else {
-      setIsLoading(false);
-    }
-  }, [router]);
-
-  const handleVote = (optionId: string) => {
-    if (!user || votes[user]) return;
-
-    const newVotes = saveVote(user, optionId);
-    setVotes(newVotes);
-
-    // If all users have voted, redirect to results
-    if (Object.keys(newVotes).length === USERS.length) {
-      router.push('/results');
+    try {
+      await setDoc(doc(db, 'votes', user.uid), voteData);
+    } catch(e) {
+      console.error("Error writing document: ", e);
     }
   };
 
-  const handleLogout = () => {
-    logoutUser();
+  const handleLogout = async () => {
+    if (auth) {
+      await signOut(auth);
+    }
     router.push('/login');
   };
 
   const voteCounts = useMemo(() => {
     const counts: { [key: string]: number } = {};
     votingOptions.forEach(opt => counts[opt.id] = 0);
-    for (const voter in votes) {
-      const optionId = votes[voter];
-      if (optionId in counts) {
-        counts[optionId]++;
+    allVotes.forEach(v => {
+      if (v.optionId in counts) {
+        counts[v.optionId]++;
       }
-    }
+    });
     return counts;
-  }, [votes]);
+  }, [allVotes]);
   
-  const totalVotes = Object.keys(votes).length;
-  const userVote = user ? votes[user] : null;
+  const totalVotes = allVotes.length;
 
   if (isLoading || !user) {
     return (
@@ -76,7 +104,7 @@ export default function VotingBoothPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Header user={user} onLogout={handleLogout} backPath="/vote" />
+      <Header user={userDisplayName || 'Usuario'} onLogout={handleLogout} backPath="/vote" />
 
       <main className="container mx-auto p-4 md:p-8">
         <div className="text-center mb-8 md:mb-12">
@@ -93,7 +121,7 @@ export default function VotingBoothPage() {
               option={option}
               onVote={() => handleVote(option.id)}
               disabled={!!userVote}
-              isSelected={userVote === option.id}
+              isSelected={userVote?.optionId === option.id}
             />
           ))}
         </div>
