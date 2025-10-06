@@ -49,7 +49,7 @@ export default function HomePage() {
   return (
     <main
       className="relative min-h-screen bg-cover bg-center bg-no-repeat p-8 text-white"
-      style={{ backgroundImage: "url('/home-background.jpg')" }}
+      style={{ backgroundImage: "url('/login-background.jpg')" }}
     >
       <div className="absolute inset-0 bg-black/60" />
       <div className="relative z-10 mx-auto flex h-full max-w-4xl flex-col items-center justify-center text-center">
