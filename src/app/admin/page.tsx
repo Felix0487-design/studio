@@ -113,14 +113,20 @@ export default function AdminPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {allVotes.map((vote, index) => (
-                                <TableRow key={index} className="border-b-white/10 hover:bg-white/10">
-                                    <TableCell className="font-medium">{vote.userName}</TableCell>
-                                    <TableCell>
-                                        {vote.optionId}
+                                {allVotes.length > 0 ? (
+                                  allVotes.map((vote, index) => (
+                                    <TableRow key={index} className="border-b-white/10 hover:bg-white/10">
+                                        <TableCell className="font-medium">{vote.userName}</TableCell>
+                                        <TableCell>{vote.optionId}</TableCell>
+                                    </TableRow>
+                                  ))
+                                ) : (
+                                  <TableRow>
+                                    <TableCell colSpan={2} className="text-center text-white/70">
+                                      Aún no hay votos registrados.
                                     </TableCell>
-                                </TableRow>
-                                ))}
+                                  </TableRow>
+                                )}
                             </TableBody>
                         </Table>
                     </div>
