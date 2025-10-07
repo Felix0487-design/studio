@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { USERS } from '@/lib/auth';
 import { useFirebase } from '@/firebase/provider';
+import { useEffect, useState } from 'react';
 
 interface HeaderProps {
   user: string;
@@ -17,6 +18,11 @@ interface HeaderProps {
 export default function Header({ user, onLogout }: HeaderProps) {
   const pathname = usePathname();
   const { allVotes, votesLoading } = useFirebase();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const allVoted = !votesLoading && allVotes.length === USERS.length;
 
@@ -48,15 +54,15 @@ export default function Header({ user, onLogout }: HeaderProps) {
                 </Link>
             ))}
              <Link 
-                href={allVoted ? '/results' : '#'}
+                href={isClient && allVoted ? '/results' : '#'}
                 className={cn(
                     "text-sm font-medium transition-colors",
                     pathname === '/results' ? "text-primary" : "text-foreground/60",
-                    allVoted ? "hover:text-primary" : "cursor-not-allowed opacity-50"
+                    isClient && allVoted ? "hover:text-primary" : "cursor-not-allowed opacity-50"
                 )}
-                aria-disabled={!allVoted}
-                tabIndex={!allVoted ? -1 : undefined}
-                onClick={(e) => !allVoted && e.preventDefault()}
+                aria-disabled={!isClient || !allVoted}
+                tabIndex={!isClient || !allVoted ? -1 : undefined}
+                onClick={(e) => (!isClient || !allVoted) && e.preventDefault()}
             >
                 Resultados
             </Link>

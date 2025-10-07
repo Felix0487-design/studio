@@ -88,7 +88,6 @@ export const FirebaseProvider = ({children}: {children: ReactNode}) => {
     setFirebaseApp(app);
     setAuth(authInstance);
     setDb(dbInstance);
-    setIsLoading(false);
 
     const unsubscribeAuth = onAuthStateChanged(authInstance, (user) => {
       setUser(user);
@@ -101,6 +100,7 @@ export const FirebaseProvider = ({children}: {children: ReactNode}) => {
       } else {
         setUserDisplayName(null);
       }
+      setIsLoading(false);
     });
 
     return () => unsubscribeAuth();
