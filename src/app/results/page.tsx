@@ -103,7 +103,7 @@ export default function ResultsPage() {
                <Card className="max-w-2xl mx-auto mb-12 bg-background/10 backdrop-blur-sm border-white/20 text-white shadow-lg">
                 <CardHeader className="text-center">
                   <CardTitle className="text-3xl text-white mt-4">¡Hay un Empate!</CardTitle>
-                </Header>
+                </CardHeader>
                 <CardContent className="text-center">
                   <p className="text-lg font-bold text-white/80">Varias opciones han recibido el mismo número de votos. ¡A debatir!</p>
                 </CardContent>
