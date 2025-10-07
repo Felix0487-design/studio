@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { SUPER_USER, SUPER_USER_PASSWORD } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
@@ -19,9 +19,14 @@ export default function AdminPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   const { db, allVotes } = useFirebase();
   const { toast } = useToast();
   const router = useRouter();
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,7 +77,7 @@ export default function AdminPage() {
             <CardTitle className="text-2xl mt-2">Panel de Administrador</CardTitle>
         </CardHeader>
         <CardContent className="p-8">
-          {!isAuthenticated ? (
+          {isClient && !isAuthenticated ? (
             <form onSubmit={handleAdminLogin} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="username">Usuario Admin</Label>
@@ -100,7 +105,7 @@ export default function AdminPage() {
                 Autenticar
               </Button>
             </form>
-          ) : (
+          ) : isClient && isAuthenticated ? (
             <div className="flex flex-col items-center gap-6">
                 <div className='w-full'>
                     <h3 className="text-xl font-semibold mb-4 text-center text-accent">Estado de Votos</h3>
@@ -139,7 +144,7 @@ export default function AdminPage() {
                 <LogOut className="mr-2"/> Cerrar Sesión de Admin
               </Button>
             </div>
-          )}
+          ) : null}
           <div className="mt-6 text-center">
             <Button variant="link" onClick={() => router.push('/login')}>
               Volver al inicio
