@@ -42,7 +42,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Header user={userDisplayName || 'Usuario'} onLogout={handleLogout} showVoteButton={!hasVoted && !allVoted} />
+      <Header user={userDisplayName || 'Usuario'} onLogout={handleLogout} />
       <main
         className="relative min-h-[calc(100vh-81px)] bg-cover bg-center bg-no-repeat p-8 text-white"
         style={{ backgroundImage: "url('/login-background.jpg')" }}

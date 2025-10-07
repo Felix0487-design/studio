@@ -3,24 +3,33 @@
 
 import { useRouter, usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { LogOut, Snowflake, ThumbsUp } from 'lucide-react';
+import { LogOut, Snowflake } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { USERS } from '@/lib/auth';
+import { useFirebase } from '@/firebase/provider';
 
 interface HeaderProps {
   user: string;
   onLogout: () => void;
-  showVoteButton: boolean;
 }
 
-export default function Header({ user, onLogout, showVoteButton }: HeaderProps) {
-  const router = useRouter();
+export default function Header({ user, onLogout }: HeaderProps) {
   const pathname = usePathname();
+  const { allVotes, votesLoading } = useFirebase();
+
+  const allVoted = !votesLoading && allVotes.length === USERS.length;
 
   const navLinks = [
       { href: '/home', label: 'Inicio' },
       { href: '/vote', label: 'Propuestas' },
+      { href: '/voting-booth', label: 'Opciones' },
   ];
+  
+  if (allVoted) {
+      navLinks.push({ href: '/results', label: 'Resultados' });
+  }
+
 
   return (
     <header className="sticky top-0 z-20 border-b bg-background/80 backdrop-blur-sm">
@@ -46,12 +55,6 @@ export default function Header({ user, onLogout, showVoteButton }: HeaderProps) 
           </nav>
         </div>
         <div className="flex items-center gap-4">
-            {showVoteButton && (
-                 <Button onClick={() => router.push('/voting-booth')}>
-                    <ThumbsUp className="mr-2 h-4 w-4" />
-                    Ir a Votar
-                 </Button>
-            )}
           <span className="hidden sm:inline text-foreground/80">¡Hola, {user}!</span>
           <Button variant="ghost" size="icon" onClick={onLogout} aria-label="Cerrar sesión">
             <LogOut className="h-5 w-5 text-primary" />

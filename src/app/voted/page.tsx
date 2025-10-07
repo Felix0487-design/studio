@@ -43,12 +43,9 @@ export default function VotedPage() {
     );
   }
 
-  const hasVoted = !!userVote;
-  const allVoted = votesCount === USERS.length;
-
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Header user={userDisplayName || 'Usuario'} onLogout={handleLogout} showVoteButton={!hasVoted && !allVoted} />
+      <Header user={userDisplayName || 'Usuario'} onLogout={handleLogout} />
       <main 
         className="relative flex min-h-[calc(100vh-81px)] items-center justify-center bg-cover bg-center p-4"
         style={{ backgroundImage: "url('/login-background.jpg')" }}

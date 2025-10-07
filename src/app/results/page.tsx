@@ -74,7 +74,7 @@ export default function ResultsPage() {
     };
   }, [allVotes]);
 
-  if (isLoading || votesLoading || !user) {
+  if (isLoading || votesLoading || !user || (!votesLoading && allVotes.length < USERS.length)) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Snowflake className="h-16 w-16 animate-spin text-primary" />
@@ -82,12 +82,9 @@ export default function ResultsPage() {
     );
   }
   
-  const hasVoted = !!userVote;
-  const allVoted = totalVotes === USERS.length;
-
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Header user={userDisplayName || 'Usuario'} onLogout={handleLogout} showVoteButton={!hasVoted && !allVoted} />
+      <Header user={userDisplayName || 'Usuario'} onLogout={handleLogout} />
 
       <main 
         className="relative min-h-[calc(100vh-81px)] bg-cover bg-center bg-no-repeat p-4 md:p-8"
@@ -119,7 +116,7 @@ export default function ResultsPage() {
                <Card className="max-w-2xl mx-auto mb-12 bg-background/10 backdrop-blur-sm border-white/20 text-white shadow-lg">
                 <CardHeader className="text-center">
                   <CardTitle className="text-3xl text-white mt-4">¡Hay un Empate!</CardTitle>
-                </CardHeader>
+                </Header>
                 <CardContent className="text-center">
                   <p className="text-lg font-bold text-white/80">Varias opciones han recibido el mismo número de votos. ¡A debatir!</p>
                 </CardContent>

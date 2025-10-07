@@ -53,11 +53,10 @@ export default function VotePage() {
   }
 
   const hasVoted = !!userVote;
-  const allVoted = allVotes.length === USERS.length;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Header user={userDisplayName || 'Usuario'} onLogout={handleLogout} showVoteButton={!hasVoted && !allVoted} />
+      <Header user={userDisplayName || 'Usuario'} onLogout={handleLogout} />
 
       <main 
         className="relative min-h-[calc(100vh-81px)] bg-cover bg-center bg-no-repeat p-4 md:p-8"
@@ -116,6 +115,15 @@ export default function VotePage() {
               </CardContent>
             </Card>
           </div>
+
+          {!hasVoted && (
+            <div className="text-center">
+                <Button size="lg" onClick={() => router.push('/voting-booth')} className="animate-pulse">
+                    <ThumbsUp className="mr-2 h-4 w-4" />
+                    Ir a Votar
+                </Button>
+            </div>
+          )}
 
         </div>
       </main>
