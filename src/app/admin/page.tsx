@@ -72,6 +72,91 @@ export default function AdminPage() {
     }
   };
 
+  const renderContent = () => {
+    if (!isClient) {
+      return <div className="text-center text-white/70">Cargando panel...</div>;
+    }
+
+    if (!isAuthenticated) {
+      return (
+        <form onSubmit={handleAdminLogin} className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="username">Usuario Admin</Label>
+            <Input
+              id="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="super_usuario"
+              className="bg-white/90 text-black"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">Contraseña Admin</Label>
+            <Input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="********"
+              className="bg-white/90 text-black"
+            />
+          </div>
+          {error && <p className="text-sm font-medium text-destructive">{error}</p>}
+          <Button type="submit" className="w-full !mt-8">
+            Autenticar
+          </Button>
+        </form>
+      );
+    }
+
+    return (
+      <div className="flex flex-col items-center gap-6">
+          <div className='w-full'>
+              <h3 className="text-xl font-semibold mb-4 text-center text-accent">Estado de Votos</h3>
+              <div className="max-h-60 overflow-y-auto rounded-lg border border-white/20 bg-white/10">
+                  <Table>
+                      <TableHeader>
+                          <TableRow className="border-b-white/20 hover:bg-white/20">
+                              <TableHead className="text-white">Usuario</TableHead>
+                              <TableHead className="text-white">Opción Votada</TableHead>
+                          </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                          {votesLoading ? (
+                            <TableRow>
+                              <TableCell colSpan={2} className="text-center text-white/70">
+                                Cargando votos...
+                              </TableCell>
+                            </TableRow>
+                          ) : allVotes.length > 0 ? (
+                            allVotes.map((vote, index) => (
+                              <TableRow key={index} className="border-b-white/10 hover:bg-white/10">
+                                  <TableCell className="font-medium">{vote.userName}</TableCell>
+                                  <TableCell>{vote.optionId}</TableCell>
+                              </TableRow>
+                            ))
+                          ) : (
+                            <TableRow>
+                              <TableCell colSpan={2} className="text-center text-white/70">
+                                Aún no hay votos registrados.
+                              </TableCell>
+                            </TableRow>
+                          )}
+                      </TableBody>
+                  </Table>
+              </div>
+          </div>
+        
+        <Button variant="destructive" onClick={handleResetVotes} className="w-full">
+          Resetear Todos los Votos
+        </Button>
+         <Button variant="secondary" onClick={() => setIsAuthenticated(false)} className="w-full">
+          <LogOut className="mr-2"/> Cerrar Sesión de Admin
+        </Button>
+      </div>
+    );
+  };
+
   return (
     <main 
       className="relative flex min-h-screen items-center justify-center bg-cover bg-center p-4"
@@ -84,87 +169,7 @@ export default function AdminPage() {
             <CardTitle className="text-2xl mt-2">Panel de Administrador</CardTitle>
         </CardHeader>
         <CardContent className="p-8">
-          {isClient && !isAuthenticated ? (
-            <form onSubmit={handleAdminLogin} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="username">Usuario Admin</Label>
-                <Input
-                  id="username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="super_usuario"
-                  className="bg-white/90 text-black"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Contraseña Admin</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="********"
-                  className="bg-white/90 text-black"
-                />
-              </div>
-              {error && <p className="text-sm font-medium text-destructive">{error}</p>}
-              <Button type="submit" className="w-full !mt-8">
-                Autenticar
-              </Button>
-            </form>
-          ) : null}
-          
-          {isClient && isAuthenticated ? (
-            <div className="flex flex-col items-center gap-6">
-                <div className='w-full'>
-                    <h3 className="text-xl font-semibold mb-4 text-center text-accent">Estado de Votos</h3>
-                    <div className="max-h-60 overflow-y-auto rounded-lg border border-white/20 bg-white/10">
-                        <Table>
-                            <TableHeader>
-                                <TableRow className="border-b-white/20 hover:bg-white/20">
-                                    <TableHead className="text-white">Usuario</TableHead>
-                                    <TableHead className="text-white">Opción Votada</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {votesLoading ? (
-                                  <TableRow>
-                                    <TableCell colSpan={2} className="text-center text-white/70">
-                                      Cargando votos...
-                                    </TableCell>
-                                  </TableRow>
-                                ) : allVotes.length > 0 ? (
-                                  allVotes.map((vote, index) => (
-                                    <TableRow key={index} className="border-b-white/10 hover:bg-white/10">
-                                        <TableCell className="font-medium">{vote.userName}</TableCell>
-                                        <TableCell>{vote.optionId}</TableCell>
-                                    </TableRow>
-                                  ))
-                                ) : (
-                                  <TableRow>
-                                    <TableCell colSpan={2} className="text-center text-white/70">
-                                      Aún no hay votos registrados.
-                                    </TableCell>
-                                  </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
-                </div>
-              
-              <Button variant="destructive" onClick={handleResetVotes} className="w-full">
-                Resetear Todos los Votos
-              </Button>
-               <Button variant="secondary" onClick={() => setIsAuthenticated(false)} className="w-full">
-                <LogOut className="mr-2"/> Cerrar Sesión de Admin
-              </Button>
-            </div>
-          ) : null}
-
-          {!isClient && (
-             <div className="text-center text-white/70">Cargando panel...</div>
-          )}
-          
+          {renderContent()}
           <div className="mt-6 text-center">
             <Button variant="link" onClick={() => router.push('/login')}>
               Volver al inicio
