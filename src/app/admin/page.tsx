@@ -15,6 +15,15 @@ import { useFirebase } from '@/firebase/provider';
 import { collection, writeBatch, getDocs } from 'firebase/firestore';
 import { Shield, LogOut } from 'lucide-react';
 
+const normalizeString = (str: string) => {
+  if (!str) return '';
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/\s/g, '');
+};
+
 export default function AdminPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -64,10 +73,13 @@ export default function AdminPage() {
   const userVoteDetails = useMemo(() => {
     if (votesLoading) return [];
     
-    const voteMap = new Map(allVotes.map(vote => [vote.userName, vote.optionId]));
+    // Create a map with normalized usernames for robust matching
+    const voteMap = new Map(allVotes.map(vote => [normalizeString(vote.userName), vote.optionId]));
     
     return USERS.map(user => {
-      const optionId = voteMap.get(user);
+      // Normalize the username from the USERS list to find it in the map
+      const normalizedUser = normalizeString(user);
+      const optionId = voteMap.get(normalizedUser);
       const option = optionId ? votingOptions.find(opt => opt.id === optionId) : null;
       return {
         name: user,
