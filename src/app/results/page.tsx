@@ -3,7 +3,6 @@
 
 import { useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { USERS } from '@/lib/auth';
 import { votingOptions } from '@/lib/voting';
 import VoteResults from '../vote/VoteResults';
 import { Trophy, Snowflake } from 'lucide-react';
@@ -21,13 +20,6 @@ export default function ResultsPage() {
       router.replace('/login');
     }
   }, [user, isLoading, router]);
-
-  const handleLogout = async () => {
-    if (auth) {
-      await signOut(auth);
-    }
-    router.push('/login');
-  };
 
   const { voteCounts, totalVotes, winner } = useMemo(() => {
     const counts: { [key: string]: number } = {};
@@ -62,6 +54,13 @@ export default function ResultsPage() {
     };
   }, [allVotes]);
 
+  const handleLogout = async () => {
+    if (auth) {
+      await signOut(auth);
+    }
+    router.push('/login');
+  };
+  
   if (isLoading || votesLoading || !user) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
