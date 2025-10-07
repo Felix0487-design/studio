@@ -111,27 +111,26 @@ export const FirebaseProvider = ({children}: {children: ReactNode}) => {
       setVotesLoading(false);
       return;
     }
-    
-    if (!user) {
-        setAllVotes([]);
-        setUserVote(null);
-        setVotesLoading(false); // Not loading if no user
-        return;
-    }
 
     setVotesLoading(true);
 
     const votesCol = collection(db, 'votes');
     const unsubscribeAllVotes = onSnapshot(query(votesCol), (snapshot) => {
-      const votesData = snapshot.docs.map(doc => doc.data() as Vote);
+      const votesData = snapshot.docs.map(doc => ({ ...doc.data() as Vote, id: doc.id }));
       setAllVotes(votesData);
 
-      const currentUserVote = snapshot.docs.find(doc => doc.id === user.uid);
-      if (currentUserVote) {
-        setUserVote(currentUserVote.data() as Vote);
+      // We only update the userVote if a user is logged in
+      if (user) {
+        const currentUserVote = snapshot.docs.find(doc => doc.id === user.uid);
+        if (currentUserVote) {
+          setUserVote(currentUserVote.data() as Vote);
+        } else {
+          setUserVote(null);
+        }
       } else {
         setUserVote(null);
       }
+
       setVotesLoading(false);
     }, (error) => {
       console.error("Error fetching all votes:", error);
@@ -144,8 +143,7 @@ export const FirebaseProvider = ({children}: {children: ReactNode}) => {
     return () => {
         unsubscribeAllVotes();
     };
-
-  }, [db, user]);
+  }, [db, user]); // We keep user here to re-evaluate userVote when the user changes
 
   return (
     <FirebaseContext.Provider
