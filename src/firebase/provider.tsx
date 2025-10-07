@@ -107,43 +107,48 @@ export const FirebaseProvider = ({children}: {children: ReactNode}) => {
   }, []);
 
   useEffect(() => {
-    if (!db) {
-      setVotesLoading(false);
-      return;
-    }
+    if (!db) return;
 
     setVotesLoading(true);
+    const votesQuery = query(collection(db, 'votes'));
 
-    const votesCol = collection(db, 'votes');
-    const unsubscribeAllVotes = onSnapshot(query(votesCol), (snapshot) => {
-      const votesData = snapshot.docs.map(doc => ({ ...doc.data() as Vote, id: doc.id }));
-      setAllVotes(votesData);
+    const unsubscribe = onSnapshot(
+      votesQuery,
+      (snapshot) => {
+        const votesData = snapshot.docs.map(doc => ({ ...(doc.data() as Vote), id: doc.id }));
+        setAllVotes(votesData);
 
-      // We only update the userVote if a user is logged in
-      if (user) {
-        const currentUserVote = snapshot.docs.find(doc => doc.id === user.uid);
-        if (currentUserVote) {
-          setUserVote(currentUserVote.data() as Vote);
+        const currentUser = getAuth().currentUser; // Get fresh user state
+        if (currentUser) {
+          const currentUserVote = votesData.find(vote => (vote as any).id === currentUser.uid);
+          setUserVote(currentUserVote || null);
         } else {
           setUserVote(null);
         }
-      } else {
+        
+        setVotesLoading(false);
+      },
+      (error) => {
+        console.error("Error fetching votes:", error);
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'votes', operation: 'list' }));
+        setAllVotes([]);
+        setUserVote(null);
+        setVotesLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [db]);
+
+  useEffect(() => {
+      if (user && allVotes.length > 0) {
+        const currentUserVote = allVotes.find(v => (v as any).id === user.uid);
+        setUserVote(currentUserVote || null);
+      } else if (!user) {
         setUserVote(null);
       }
+  }, [user, allVotes]);
 
-      setVotesLoading(false);
-    }, (error) => {
-      console.error("Error fetching all votes:", error);
-      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: votesCol.path, operation: 'list' }));
-      setAllVotes([]);
-      setUserVote(null);
-      setVotesLoading(false);
-    });
-    
-    return () => {
-        unsubscribeAllVotes();
-    };
-  }, [db, user]); // We keep user here to re-evaluate userVote when the user changes
 
   return (
     <FirebaseContext.Provider

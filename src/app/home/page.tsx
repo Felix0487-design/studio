@@ -54,7 +54,7 @@ export default function HomePage() {
             ¡Bienvenido, {userDisplayName}!
           </h1>
 
-          <div className="my-8 rounded-lg bg-black/50 p-6 backdrop-blur-sm">
+          <div className="my-8 rounded-lg bg-black/0 p-6 ">
             <p className="mb-4 text-lg leading-relaxed">
               Si mis cálculos no fallan, y si es así que alguien me lo diga aportando datos, no vale decir "yo no estoy seguro, yo creo que...", etc., etc., llevamos desde diciembre de 1983, posiblemente el 23.12.1983 celebrando esta cena, ININTERRUMPIDAMENTE.
             </p>
