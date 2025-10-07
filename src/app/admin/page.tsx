@@ -50,16 +50,23 @@ export default function AdminPage() {
     const confirmReset = window.confirm("¿Estás seguro de que quieres borrar todos los votos? Esta acción no se puede deshacer.");
     if (confirmReset) {
       try {
-        const votesCollection = collection(db, 'votes');
-        const votesSnapshot = await getDocs(votesCollection);
+        const votesCollectionRef = collection(db, 'votes');
+        const votesSnapshot = await getDocs(votesCollectionRef);
+        
+        if (votesSnapshot.empty) {
+          toast({ title: "Información", description: "No hay votos para borrar." });
+          return;
+        }
+
         const batch = writeBatch(db);
         votesSnapshot.forEach(doc => {
           batch.delete(doc.ref);
         });
         await batch.commit();
+
         toast({ title: "Votos Reseteados", description: "Todos los votos han sido borrados correctamente." });
       } catch (err) {
-        console.error(err);
+        console.error("Error al resetear los votos:", err);
         toast({ title: "Error", description: "No se pudieron resetear los votos.", variant: "destructive" });
       }
     }
@@ -105,7 +112,9 @@ export default function AdminPage() {
                 Autenticar
               </Button>
             </form>
-          ) : isClient && isAuthenticated ? (
+          ) : null}
+          
+          {isClient && isAuthenticated ? (
             <div className="flex flex-col items-center gap-6">
                 <div className='w-full'>
                     <h3 className="text-xl font-semibold mb-4 text-center text-accent">Estado de Votos</h3>
@@ -118,7 +127,13 @@ export default function AdminPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {!votesLoading && allVotes.length > 0 ? (
+                                {votesLoading ? (
+                                  <TableRow>
+                                    <TableCell colSpan={2} className="text-center text-white/70">
+                                      Cargando votos...
+                                    </TableCell>
+                                  </TableRow>
+                                ) : allVotes.length > 0 ? (
                                   allVotes.map((vote, index) => (
                                     <TableRow key={index} className="border-b-white/10 hover:bg-white/10">
                                         <TableCell className="font-medium">{vote.userName}</TableCell>
@@ -128,7 +143,7 @@ export default function AdminPage() {
                                 ) : (
                                   <TableRow>
                                     <TableCell colSpan={2} className="text-center text-white/70">
-                                      {votesLoading ? "Cargando votos..." : "Aún no hay votos registrados."}
+                                      Aún no hay votos registrados.
                                     </TableCell>
                                   </TableRow>
                                 )}
@@ -145,6 +160,11 @@ export default function AdminPage() {
               </Button>
             </div>
           ) : null}
+
+          {!isClient && (
+             <div className="text-center text-white/70">Cargando panel...</div>
+          )}
+          
           <div className="mt-6 text-center">
             <Button variant="link" onClick={() => router.push('/login')}>
               Volver al inicio
