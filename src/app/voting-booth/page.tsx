@@ -102,10 +102,12 @@ export default function VotingBoothPage() {
       return "La votación ha finalizado. Gracias por participar.";
     }
     if (hasVoted) {
-      return "Ya has emitido tu voto. A continuación puedes ver las opciones.";
+      return null;
     }
     return "Solo puedes votar una vez. ¡Elige con sabiduría!";
   };
+  
+  const headerSubtitle = getHeaderText();
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -142,10 +144,14 @@ export default function VotingBoothPage() {
           )}
 
           <div className="text-center mb-8 md:mb-12 text-white">
-            <h2 className="text-3xl md:text-4xl font-headline mb-2 drop-shadow-md">{userDisplayName}, emite tu Voto</h2>
-            <p className={`text-lg ${hasVoted || allHaveVoted ? 'text-accent font-bold' : 'text-white/80'}`}>
-              {getHeaderText()}
-            </p>
+            <h2 className="text-3xl md:text-4xl font-headline mb-2 drop-shadow-md">
+              {hasVoted ? `Gracias por votar, ${userDisplayName}` : `${userDisplayName}, emite tu Voto`}
+            </h2>
+            {headerSubtitle && (
+              <p className={`text-lg ${hasVoted || allHaveVoted ? 'text-accent font-bold' : 'text-white/80'}`}>
+                {headerSubtitle}
+              </p>
+            )}
           </div>
           
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-12">
