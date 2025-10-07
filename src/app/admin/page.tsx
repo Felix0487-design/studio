@@ -20,7 +20,7 @@ export default function AdminPage() {
   const [error, setError] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isClient, setIsClient] = useState(false);
-  const { db, allVotes } = useFirebase();
+  const { db, allVotes, votesLoading } = useFirebase();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -118,7 +118,7 @@ export default function AdminPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {allVotes.length > 0 ? (
+                                {!votesLoading && allVotes.length > 0 ? (
                                   allVotes.map((vote, index) => (
                                     <TableRow key={index} className="border-b-white/10 hover:bg-white/10">
                                         <TableCell className="font-medium">{vote.userName}</TableCell>
@@ -128,7 +128,7 @@ export default function AdminPage() {
                                 ) : (
                                   <TableRow>
                                     <TableCell colSpan={2} className="text-center text-white/70">
-                                      Aún no hay votos registrados.
+                                      {votesLoading ? "Cargando votos..." : "Aún no hay votos registrados."}
                                     </TableCell>
                                   </TableRow>
                                 )}
