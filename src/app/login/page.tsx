@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { USERS } from '@/lib/auth';
@@ -36,6 +36,11 @@ export default function LoginPage() {
 
   const [isLoading, setIsLoading] = useState(true);
   
+  // Secret admin link state
+  const [tapCount, setTapCount] = useState(0);
+  const [showAdminLink, setShowAdminLink] = useState(false);
+  const tapTimeout = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
     if (user) {
       router.replace('/home');
@@ -43,6 +48,23 @@ export default function LoginPage() {
       setIsLoading(false);
     }
   }, [user, router]);
+
+  const handleSecretTap = () => {
+    if (tapTimeout.current) {
+      clearTimeout(tapTimeout.current);
+    }
+
+    const newTapCount = tapCount + 1;
+    setTapCount(newTapCount);
+
+    if (newTapCount >= 3) {
+      setShowAdminLink(true);
+    } else {
+      tapTimeout.current = setTimeout(() => {
+        setTapCount(0); // Reset after 2 seconds
+      }, 2000);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,6 +120,9 @@ export default function LoginPage() {
         <div className="absolute inset-0 bg-black/60" />
         <Card className="relative z-10 w-full max-w-sm shadow-2xl bg-black/50 border-white/20 text-white">
           <CardContent className="p-8">
+            <div className="flex justify-center mb-6" onClick={handleSecretTap}>
+               <Snowflake className="h-12 w-12 text-white" />
+            </div>
             <form onSubmit={handleLogin} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="user-select" className="text-white">Nombre</Label>
@@ -138,10 +163,12 @@ export default function LoginPage() {
                 Entrar
               </Button>
             </form>
-             <div className="mt-4 text-center text-xs">
-              <Link href="/admin" className="text-white/50 opacity-0 hover:opacity-100 hover:text-white/80 transition-opacity">
-                Admin Panel
-              </Link>
+             <div className="mt-4 text-center text-xs h-4">
+              {showAdminLink && (
+                  <Link href="/admin" className="text-white/50 hover:text-white/80 transition-opacity">
+                    Admin Panel
+                  </Link>
+              )}
             </div>
           </CardContent>
         </Card>

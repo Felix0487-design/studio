@@ -145,7 +145,7 @@ export default function VotingBoothPage() {
 
           <div className="text-center mb-8 md:mb-12 text-white">
             <h2 className="text-3xl md:text-4xl font-headline mb-2 drop-shadow-md">
-              {hasVoted ? `Gracias por votar, ${userDisplayName}` : `${userDisplayName}, emite tu Voto`}
+              {hasVoted ? `Gracias por tu colaboración, ${userDisplayName}.` : `${userDisplayName}, emite tu Voto`}
             </h2>
             {headerSubtitle && (
               <p className={`text-lg ${hasVoted || allHaveVoted ? 'text-accent font-bold' : 'text-white/80'}`}>
