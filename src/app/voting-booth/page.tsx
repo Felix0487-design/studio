@@ -36,11 +36,11 @@ export default function VotingBoothPage() {
   }, [isLoading, user, router]);
 
   useEffect(() => {
-    // Redirect if user has already voted AND voting is not closed yet
-    if (!votesLoading && user && userVote && allVotes.length < USERS.length) {
-      router.replace('/voted');
+    // Redirect if voting is closed for everyone
+    if (!votesLoading && allVotes.length === USERS.length) {
+      router.replace('/results');
     }
-  }, [allVotes.length, votesLoading, router, user, userVote]);
+  }, [allVotes.length, votesLoading, router]);
 
 
   const handleVoteClick = (option: VotingOption) => {
@@ -61,6 +61,7 @@ export default function VotingBoothPage() {
     const voteRef = doc(db, 'votes', user.uid);
     try {
       await setDoc(voteRef, voteData);
+      router.push('/voted'); // Redirect to thank you page after voting
     } catch (error) {
       const permissionError = new FirestorePermissionError({
           path: voteRef.path,
@@ -82,6 +83,7 @@ export default function VotingBoothPage() {
   };
 
   const allHaveVoted = allVotes.length === USERS.length;
+  const hasVoted = !!userVote;
 
   const shouldShowLoading = isLoading || votesLoading || !user;
   
@@ -92,6 +94,16 @@ export default function VotingBoothPage() {
       </div>
     );
   }
+
+  const getHeaderText = () => {
+    if (allHaveVoted) {
+      return "La votación ha finalizado. Gracias por participar.";
+    }
+    if (hasVoted) {
+      return "Ya has emitido tu voto. Puedes ver las opciones pero no cambiar tu elección.";
+    }
+    return "Solo puedes votar una vez. ¡Elige con sabiduría!";
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -105,16 +117,9 @@ export default function VotingBoothPage() {
         <div className="relative z-10 container mx-auto">
           <div className="text-center mb-8 md:mb-12 text-white">
             <h2 className="text-3xl md:text-4xl font-headline mb-2 drop-shadow-md">{userDisplayName} emite tu Voto</h2>
-            { !allHaveVoted ? (
-                <p className="text-lg text-white/80">
-                  Solo puedes votar una vez. ¡Elige con sabiduría!
-                </p>
-              ) : (
-                 <p className="text-lg text-accent font-bold">
-                  La votación ha finalizado. Gracias por participar.
-                </p>
-              )
-            }
+            <p className={`text-lg ${hasVoted || allHaveVoted ? 'text-accent font-bold' : 'text-white/80'}`}>
+              {getHeaderText()}
+            </p>
           </div>
           
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-12">
@@ -123,7 +128,7 @@ export default function VotingBoothPage() {
                 key={option.id}
                 option={option}
                 onVote={() => handleVoteClick(option)}
-                disabled={!!userVote || allHaveVoted}
+                disabled={hasVoted || allHaveVoted}
                 isSelected={userVote?.optionId === option.id}
               />
             ))}
