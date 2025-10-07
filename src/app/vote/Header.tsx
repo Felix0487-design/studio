@@ -26,11 +26,6 @@ export default function Header({ user, onLogout }: HeaderProps) {
       { href: '/voting-booth', label: 'Opciones' },
   ];
   
-  if (allVoted) {
-      navLinks.push({ href: '/results', label: 'Resultados' });
-  }
-
-
   return (
     <header className="sticky top-0 z-20 border-b bg-background/80 backdrop-blur-sm">
       <div className="container mx-auto flex items-center justify-between p-4">
@@ -52,6 +47,19 @@ export default function Header({ user, onLogout }: HeaderProps) {
                     {link.label}
                 </Link>
             ))}
+             <Link 
+                href={allVoted ? '/results' : '#'}
+                className={cn(
+                    "text-sm font-medium transition-colors",
+                    pathname === '/results' ? "text-primary" : "text-foreground/60",
+                    allVoted ? "hover:text-primary" : "cursor-not-allowed opacity-50"
+                )}
+                aria-disabled={!allVoted}
+                tabIndex={!allVoted ? -1 : undefined}
+                onClick={(e) => !allVoted && e.preventDefault()}
+            >
+                Resultados
+            </Link>
           </nav>
         </div>
         <div className="flex items-center gap-4">
