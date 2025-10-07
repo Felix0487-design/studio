@@ -16,6 +16,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 import ConfirmationDialog from './ConfirmationDialog';
 import type { VotingOption } from '@/lib/voting';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 type Vote = {
   optionId: string;
@@ -25,7 +26,8 @@ type Vote = {
 export default function VotingBoothPage() {
   const router = useRouter();
   const { auth, db, user, isLoading, userDisplayName, allVotes, userVote, votesLoading } = useFirebase();
-
+  const votesCount = allVotes.length;
+  
   const [selectedOption, setSelectedOption] = useState<VotingOption | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -61,7 +63,7 @@ export default function VotingBoothPage() {
     const voteRef = doc(db, 'votes', user.uid);
     try {
       await setDoc(voteRef, voteData);
-      router.push('/voted'); // Redirect to thank you page after voting
+      // No redirection needed, the page will re-render with the new state
     } catch (error) {
       const permissionError = new FirestorePermissionError({
           path: voteRef.path,
@@ -100,7 +102,7 @@ export default function VotingBoothPage() {
       return "La votación ha finalizado. Gracias por participar.";
     }
     if (hasVoted) {
-      return "Ya has emitido tu voto. Puedes ver las opciones pero no cambiar tu elección.";
+      return "Ya has emitido tu voto. A continuación puedes ver las opciones.";
     }
     return "Solo puedes votar una vez. ¡Elige con sabiduría!";
   };
@@ -115,8 +117,32 @@ export default function VotingBoothPage() {
       >
         <div className="absolute inset-0 bg-black/70" />
         <div className="relative z-10 container mx-auto">
+          
+          {hasVoted && !allHaveVoted && (
+             <Card className="relative z-10 w-full max-w-md mx-auto mb-12 text-center shadow-2xl bg-background/10 backdrop-blur-sm border-white/20 text-white">
+                <CardHeader>
+                    <CardTitle className="text-3xl text-white">¡Gracias por votar!</CardTitle>
+                    <CardDescription className="text-white/80">Tu voto ha sido registrado correctamente.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="my-4 rounded-lg bg-black/50 p-6">
+                    <h3 className="text-xl font-bold text-white">Estado de la Votación</h3>
+                    <p className="mt-2 text-lg text-white">
+                        Votos emitidos hasta ahora:
+                    </p>
+                    <p className="mt-1 text-5xl font-extrabold text-accent">
+                        {votesCount} <span className="text-2xl font-medium text-white/80">/ {USERS.length}</span>
+                    </p>
+                    </div>
+                    <p className="mt-6 text-sm text-white/60">
+                    Cuando todos hayan votado, los resultados finales se mostrarán automáticamente.
+                    </p>
+                </CardContent>
+            </Card>
+          )}
+
           <div className="text-center mb-8 md:mb-12 text-white">
-            <h2 className="text-3xl md:text-4xl font-headline mb-2 drop-shadow-md">{userDisplayName} emite tu Voto</h2>
+            <h2 className="text-3xl md:text-4xl font-headline mb-2 drop-shadow-md">{userDisplayName}, emite tu Voto</h2>
             <p className={`text-lg ${hasVoted || allHaveVoted ? 'text-accent font-bold' : 'text-white/80'}`}>
               {getHeaderText()}
             </p>
