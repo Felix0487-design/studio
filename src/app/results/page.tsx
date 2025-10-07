@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { USERS } from '@/lib/auth';
 import { votingOptions } from '@/lib/voting';
@@ -19,20 +19,13 @@ type Vote = {
 
 export default function ResultsPage() {
   const router = useRouter();
-  const { auth, user, userDisplayName, isLoading, allVotes, votesLoading, userVote } = useFirebase();
+  const { auth, user, userDisplayName, isLoading, allVotes, votesLoading } = useFirebase();
 
   useEffect(() => {
     if (!isLoading && !user) {
       router.replace('/login');
-      return;
     }
-    
-    // Security check: if somehow a user gets here before voting is complete, redirect them.
-    if (!votesLoading && allVotes.length < USERS.length) {
-        router.replace('/vote');
-        return;
-    }
-  }, [user, isLoading, allVotes, votesLoading, router]);
+  }, [user, isLoading, router]);
   
   const handleLogout = async () => {
     if (auth) {
@@ -74,7 +67,7 @@ export default function ResultsPage() {
     };
   }, [allVotes]);
 
-  if (isLoading || votesLoading || !user || (!votesLoading && allVotes.length < USERS.length)) {
+  if (isLoading || votesLoading || !user) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Snowflake className="h-16 w-16 animate-spin text-primary" />
