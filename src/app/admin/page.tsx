@@ -1,13 +1,15 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { SUPER_USER, SUPER_USER_PASSWORD } from '@/lib/auth';
+import { SUPER_USER, SUPER_USER_PASSWORD, USERS } from '@/lib/auth';
+import { votingOptions } from '@/lib/voting';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase } from '@/firebase/provider';
 import { collection, writeBatch, getDocs } from 'firebase/firestore';
@@ -18,7 +20,7 @@ export default function AdminPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const { db } = useFirebase();
+  const { db, allVotes, votesLoading } = useFirebase();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -58,6 +60,23 @@ export default function AdminPage() {
       }
     }
   };
+  
+  const userVoteDetails = useMemo(() => {
+    if (votesLoading) return [];
+    
+    const voteMap = new Map(allVotes.map(vote => [vote.userName, vote.optionId]));
+    
+    return USERS.map(user => {
+      const optionId = voteMap.get(user);
+      const option = optionId ? votingOptions.find(opt => opt.id === optionId) : null;
+      return {
+        name: user,
+        votedOption: option ? option.name : 'Pendiente de Voto'
+      };
+    });
+
+  }, [allVotes, votesLoading]);
+
 
   return (
     <main 
@@ -65,7 +84,7 @@ export default function AdminPage() {
       style={{ backgroundImage: "url('/login-background.jpg')" }}
     >
       <div className="absolute inset-0 bg-black/60" />
-      <Card className="relative z-10 w-full max-w-sm shadow-2xl bg-black/50 border-white/20 text-white">
+      <Card className="relative z-10 w-full max-w-md shadow-2xl bg-black/50 border-white/20 text-white">
         <CardHeader className="text-center">
             <Shield className="mx-auto h-10 w-10 text-primary" />
             <CardTitle className="text-2xl mt-2">Panel de Administrador</CardTitle>
@@ -101,7 +120,30 @@ export default function AdminPage() {
             </form>
           ) : (
             <div className="flex flex-col items-center gap-6">
-              <p className="text-center">Has iniciado sesión como administrador.</p>
+                <div className='w-full'>
+                    <h3 className="text-xl font-semibold mb-4 text-center text-accent">Estado de Votos</h3>
+                    <div className="max-h-60 overflow-y-auto rounded-lg border border-white/20 bg-white/10">
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="border-b-white/20 hover:bg-white/20">
+                                    <TableHead className="text-white">Usuario</TableHead>
+                                    <TableHead className="text-white">Opción Votada</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {userVoteDetails.map((detail) => (
+                                <TableRow key={detail.name} className="border-b-white/10 hover:bg-white/10">
+                                    <TableCell className="font-medium">{detail.name}</TableCell>
+                                    <TableCell className={detail.votedOption === 'Pendiente de Voto' ? 'text-white/50' : ''}>
+                                        {detail.votedOption}
+                                    </TableCell>
+                                </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </div>
+              
               <Button variant="destructive" onClick={handleResetVotes} className="w-full">
                 Resetear Todos los Votos
               </Button>
