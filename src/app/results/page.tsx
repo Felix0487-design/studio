@@ -35,7 +35,7 @@ export default function ResultsPage() {
   };
 
   const { voteCounts, totalVotes, winner } = useMemo(() => {
-    const counts: { [key:string]: number } = {};
+    const counts: { [key: string]: number } = {};
     votingOptions.forEach(opt => counts[opt.id] = 0);
     
     allVotes.forEach(vote => {
