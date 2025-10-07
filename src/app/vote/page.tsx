@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { ThumbsUp, Snowflake } from 'lucide-react';
+import { ThumbsUp, Snowflake, BarChart2 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import Header from './Header';
 import { ExternalLink } from 'lucide-react';
@@ -22,16 +22,6 @@ export default function VotePage() {
     }
   }, [isLoading, user, router]);
 
-  useEffect(() => {
-    // This effect handles redirection logic once voting status is known.
-    if (!votesLoading && user) {
-        if (allVotes.length === USERS.length) {
-            // If all users have voted, immediately redirect to results.
-            router.replace('/results');
-        }
-    }
-  }, [allVotes.length, votesLoading, user, router]);
-
   const handleLogout = async () => {
     if(auth) {
         await signOut(auth);
@@ -44,7 +34,7 @@ export default function VotePage() {
   };
 
   // Render loading state until we can be sure where to direct the user.
-  if (isLoading || votesLoading || !user || (!votesLoading && allVotes.length === USERS.length)) {
+  if (isLoading || votesLoading || !user) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Snowflake className="h-16 w-16 animate-spin text-primary" />
@@ -53,6 +43,7 @@ export default function VotePage() {
   }
 
   const hasVoted = !!userVote;
+  const allHaveVoted = allVotes.length === USERS.length;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -69,7 +60,7 @@ export default function VotePage() {
             <p className="text-lg text-white/80">
               Explora las opciones {userDisplayName}. Cada opción tiene enlaces a los lugares propuestos.
             </p>
-             {hasVoted && <p className='mt-4 text-accent font-bold'>Ya has emitido tu voto.</p>}
+             {hasVoted && !allHaveVoted && <p className='mt-4 text-accent font-bold'>Ya has emitido tu voto.</p>}
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
@@ -116,11 +107,22 @@ export default function VotePage() {
             </Card>
           </div>
 
-          {!hasVoted && (
+          {!hasVoted && !allHaveVoted && (
             <div className="text-center">
                 <Button size="lg" onClick={() => router.push('/voting-booth')} className="animate-pulse">
                     <ThumbsUp className="mr-2 h-4 w-4" />
                     Ir a Votar
+                </Button>
+            </div>
+          )}
+
+          {allHaveVoted && (
+            <div className="text-center p-6 rounded-lg bg-primary/80 backdrop-blur-sm">
+                <h3 className='text-2xl font-bold text-white mb-2'>Votación Finalizada</h3>
+                <p className='text-white/90 mb-4'>Gracias a todos por participar.</p>
+                <Button size="lg" onClick={() => router.push('/results')}>
+                    <BarChart2 className="mr-2 h-4 w-4" />
+                    Ver Resultados Finales
                 </Button>
             </div>
           )}

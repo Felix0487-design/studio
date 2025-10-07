@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { USERS } from '@/lib/auth';
 import { votingOptions } from '@/lib/voting';
 import VoteCard from '../vote/VoteCard';
-import { Snowflake } from 'lucide-react';
+import { Snowflake, BarChart2 } from 'lucide-react';
 import Header from '../vote/Header';
 import { useFirebase } from '@/firebase/provider';
 import { doc, setDoc } from 'firebase/firestore';
@@ -15,6 +15,7 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import ConfirmationDialog from './ConfirmationDialog';
 import type { VotingOption } from '@/lib/voting';
+import { Button } from '@/components/ui/button';
 
 type Vote = {
   optionId: string;
@@ -35,17 +36,16 @@ export default function VotingBoothPage() {
   }, [isLoading, user, router]);
 
   useEffect(() => {
-    if (!votesLoading && user) {
-      if (allVotes.length === USERS.length) {
-        router.replace('/results');
-      } else if (userVote) {
-        router.replace('/voted');
-      }
+    // Redirect if user has already voted AND voting is not closed yet
+    if (!votesLoading && user && userVote && allVotes.length < USERS.length) {
+      router.replace('/voted');
     }
   }, [allVotes.length, votesLoading, router, user, userVote]);
 
+
   const handleVoteClick = (option: VotingOption) => {
-    if (userVote) return;
+    // Prevent voting if the user has already voted or if all users have voted.
+    if (userVote || allVotes.length === USERS.length) return;
     setSelectedOption(option);
     setIsDialogOpen(true);
   };
@@ -81,7 +81,9 @@ export default function VotingBoothPage() {
     }
   };
 
-  const shouldShowLoading = isLoading || votesLoading || !user || (!votesLoading && (userVote || allVotes.length === USERS.length));
+  const allHaveVoted = allVotes.length === USERS.length;
+
+  const shouldShowLoading = isLoading || votesLoading || !user;
   
   if (shouldShowLoading) {
     return (
@@ -103,9 +105,16 @@ export default function VotingBoothPage() {
         <div className="relative z-10 container mx-auto">
           <div className="text-center mb-8 md:mb-12 text-white">
             <h2 className="text-3xl md:text-4xl font-headline mb-2 drop-shadow-md">{userDisplayName} emite tu Voto</h2>
-            <p className="text-lg text-white/80">
-               Solo puedes votar una vez. ¡Elige con sabiduría!
-            </p>
+            { !allHaveVoted ? (
+                <p className="text-lg text-white/80">
+                  Solo puedes votar una vez. ¡Elige con sabiduría!
+                </p>
+              ) : (
+                 <p className="text-lg text-accent font-bold">
+                  La votación ha finalizado. Gracias por participar.
+                </p>
+              )
+            }
           </div>
           
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-12">
@@ -114,11 +123,20 @@ export default function VotingBoothPage() {
                 key={option.id}
                 option={option}
                 onVote={() => handleVoteClick(option)}
-                disabled={!!userVote}
+                disabled={!!userVote || allHaveVoted}
                 isSelected={userVote?.optionId === option.id}
               />
             ))}
           </div>
+
+           {allHaveVoted && (
+            <div className="text-center">
+                <Button size="lg" onClick={() => router.push('/results')}>
+                    <BarChart2 className="mr-2 h-4 w-4" />
+                    Ver Resultados
+                </Button>
+            </div>
+          )}
 
           {selectedOption && (
              <ConfirmationDialog
