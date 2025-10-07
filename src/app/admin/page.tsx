@@ -15,15 +15,6 @@ import { useFirebase } from '@/firebase/provider';
 import { collection, writeBatch, getDocs } from 'firebase/firestore';
 import { Shield, LogOut } from 'lucide-react';
 
-const normalizeString = (str: string) => {
-  if (!str) return '';
-  return str
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/\s/g, '');
-};
-
 export default function AdminPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -73,19 +64,11 @@ export default function AdminPage() {
   const userVoteDetails = useMemo(() => {
     if (votesLoading) return [];
     
-    // Create a map with normalized usernames for robust matching
-    const voteMap = new Map(allVotes.map(vote => [normalizeString(vote.userName), vote.optionId]));
-    
-    return USERS.map(user => {
-      // Normalize the username from the USERS list to find it in the map
-      const normalizedUser = normalizeString(user);
-      const optionId = voteMap.get(normalizedUser);
-      const option = optionId ? votingOptions.find(opt => opt.id === optionId) : null;
-      return {
-        name: user,
-        votedOption: option ? option.name : 'Pendiente de Voto'
-      };
-    });
+    // Directly render the votes from the database
+    return allVotes.map(vote => ({
+      name: vote.userName,
+      votedOption: vote.optionId
+    }));
 
   }, [allVotes, votesLoading]);
 
@@ -138,15 +121,15 @@ export default function AdminPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow className="border-b-white/20 hover:bg-white/20">
-                                    <TableHead className="text-white">Usuario</TableHead>
-                                    <TableHead className="text-white">Opción Votada</TableHead>
+                                    <TableHead className="text-white">userName</TableHead>
+                                    <TableHead className="text-white">optionId</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {userVoteDetails.map((detail) => (
-                                <TableRow key={detail.name} className="border-b-white/10 hover:bg-white/10">
+                                {userVoteDetails.map((detail, index) => (
+                                <TableRow key={index} className="border-b-white/10 hover:bg-white/10">
                                     <TableCell className="font-medium">{detail.name}</TableCell>
-                                    <TableCell className={detail.votedOption === 'Pendiente de Voto' ? 'text-white/50' : ''}>
+                                    <TableCell>
                                         {detail.votedOption}
                                     </TableCell>
                                 </TableRow>
