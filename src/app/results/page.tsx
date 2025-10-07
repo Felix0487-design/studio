@@ -12,11 +12,6 @@ import Header from '../vote/Header';
 import { useFirebase } from '@/firebase/provider';
 import { signOut } from 'firebase/auth';
 
-type Vote = {
-  optionId: string;
-  userName: string;
-};
-
 export default function ResultsPage() {
   const router = useRouter();
   const { auth, user, userDisplayName, isLoading, allVotes, votesLoading } = useFirebase();
@@ -26,7 +21,7 @@ export default function ResultsPage() {
       router.replace('/login');
     }
   }, [user, isLoading, router]);
-  
+
   const handleLogout = async () => {
     if (auth) {
       await signOut(auth);
@@ -74,12 +69,12 @@ export default function ResultsPage() {
       </div>
     );
   }
-  
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Header user={userDisplayName || 'Usuario'} onLogout={handleLogout} />
 
-      <main 
+      <main
         className="relative min-h-[calc(100vh-81px)] bg-cover bg-center bg-no-repeat p-4 md:p-8"
         style={{ backgroundImage: "url('/login-background.jpg')" }}
       >
