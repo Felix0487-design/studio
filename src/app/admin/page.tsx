@@ -1,10 +1,9 @@
 
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { SUPER_USER, SUPER_USER_PASSWORD, USERS } from '@/lib/auth';
-import { votingOptions } from '@/lib/voting';
+import { SUPER_USER, SUPER_USER_PASSWORD } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -20,7 +19,7 @@ export default function AdminPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const { db, allVotes, votesLoading } = useFirebase();
+  const { db, allVotes } = useFirebase();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -60,18 +59,6 @@ export default function AdminPage() {
       }
     }
   };
-  
-  const userVoteDetails = useMemo(() => {
-    if (votesLoading) return [];
-    
-    // Directly render the votes from the database
-    return allVotes.map(vote => ({
-      name: vote.userName,
-      votedOption: vote.optionId
-    }));
-
-  }, [allVotes, votesLoading]);
-
 
   return (
     <main 
@@ -121,16 +108,16 @@ export default function AdminPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow className="border-b-white/20 hover:bg-white/20">
-                                    <TableHead className="text-white">userName</TableHead>
-                                    <TableHead className="text-white">optionId</TableHead>
+                                    <TableHead className="text-white">Usuario</TableHead>
+                                    <TableHead className="text-white">Opción Votada</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {userVoteDetails.map((detail, index) => (
+                                {allVotes.map((vote, index) => (
                                 <TableRow key={index} className="border-b-white/10 hover:bg-white/10">
-                                    <TableCell className="font-medium">{detail.name}</TableCell>
+                                    <TableCell className="font-medium">{vote.userName}</TableCell>
                                     <TableCell>
-                                        {detail.votedOption}
+                                        {vote.optionId}
                                     </TableCell>
                                 </TableRow>
                                 ))}
