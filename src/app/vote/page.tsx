@@ -23,14 +23,14 @@ export default function VotePage() {
   }, [isLoading, user, router]);
 
   useEffect(() => {
+    // This effect handles redirection logic once voting status is known.
     if (!votesLoading && user) {
         if (allVotes.length === USERS.length) {
+            // If all users have voted, immediately redirect to results.
             router.replace('/results');
-        } else if (userVote) {
-            // If the user has voted, they can see proposals, but the main action is to see the voted page
         }
     }
-  }, [allVotes.length, userVote, votesLoading, user, router, allVotes]);
+  }, [allVotes.length, votesLoading, user, router]);
 
   const handleLogout = async () => {
     if(auth) {
@@ -43,7 +43,8 @@ export default function VotePage() {
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
-  if (isLoading || votesLoading || !user) {
+  // Render loading state until we can be sure where to direct the user.
+  if (isLoading || votesLoading || !user || (!votesLoading && allVotes.length === USERS.length)) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Snowflake className="h-16 w-16 animate-spin text-primary" />

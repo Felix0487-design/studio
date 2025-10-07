@@ -35,12 +35,14 @@ export default function VotingBoothPage() {
   }, [isLoading, user, router]);
 
   useEffect(() => {
-    if (!votesLoading && user && userVote) {
-      router.replace('/voted');
-    } else if (!votesLoading && allVotes.length === USERS.length) {
-      router.replace('/results');
+    if (!votesLoading && user) {
+      if (allVotes.length === USERS.length) {
+        router.replace('/results');
+      } else if (userVote) {
+        router.replace('/voted');
+      }
     }
-  }, [allVotes, votesLoading, router, user, userVote]);
+  }, [allVotes.length, votesLoading, router, user, userVote]);
 
   const handleVoteClick = (option: VotingOption) => {
     if (userVote) return;
@@ -79,7 +81,9 @@ export default function VotingBoothPage() {
     }
   };
 
-  if (isLoading || votesLoading || !user) {
+  const shouldShowLoading = isLoading || votesLoading || !user || (!votesLoading && (userVote || allVotes.length === USERS.length));
+  
+  if (shouldShowLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Snowflake className="h-16 w-16 animate-spin text-primary" />

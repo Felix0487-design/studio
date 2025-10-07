@@ -34,7 +34,8 @@ export default function VotedPage() {
     }
   };
   
-  if (isLoading || votesLoading || !user) {
+  // Render loading state until we can be sure where to direct the user.
+  if (isLoading || votesLoading || !user || (!votesLoading && votesCount === USERS.length)) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Snowflake className="h-16 w-16 animate-spin text-primary" />
