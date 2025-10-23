@@ -91,7 +91,7 @@ export default function Header({ user, onLogout }: HeaderProps) {
                   <span className="sr-only">Abrir menú</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right">
+              <SheetContent>
                 <div className="flex flex-col h-full">
                   <div className="p-4 border-b">
                      <Link href="/home" className="flex items-center gap-2">
